@@ -1,5 +1,6 @@
+export const dynamic = "force-dynamic"
+
 import { FeedbackCallout } from "@/components/feedback-widget"
-import { Button } from "@/components/ui/button"
 import {
   IconBrandGithub,
   IconExternalLink,
@@ -31,14 +32,24 @@ type Commit = {
 
 async function getRepoData() {
   try {
+    const { getCloudflareContext } = await import("@opennextjs/cloudflare")
+    const { env } = await getCloudflareContext()
+    const token = (env as unknown as Record<string, unknown>).GITHUB_TOKEN as string | undefined
+
+    const headers: Record<string, string> = {
+      Accept: "application/vnd.github+json",
+      "User-Agent": "compass-dashboard",
+    }
+    if (token) headers.Authorization = `Bearer ${token}`
+
     const [repoRes, commitsRes] = await Promise.all([
       fetch(`https://api.github.com/repos/${REPO}`, {
         next: { revalidate: 300 },
-        headers: { Accept: "application/vnd.github+json" },
+        headers,
       }),
       fetch(`https://api.github.com/repos/${REPO}/commits?per_page=8`, {
         next: { revalidate: 300 },
-        headers: { Accept: "application/vnd.github+json" },
+        headers,
       }),
     ])
 
