@@ -27,6 +27,8 @@ export const scheduleTasks = sqliteTable("schedule_tasks", {
   isMilestone: integer("is_milestone", { mode: "boolean" })
     .notNull()
     .default(false),
+  percentComplete: integer("percent_complete").notNull().default(0),
+  assignedTo: text("assigned_to"),
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
@@ -44,8 +46,38 @@ export const taskDependencies = sqliteTable("task_dependencies", {
   lagDays: integer("lag_days").notNull().default(0),
 })
 
+export const workdayExceptions = sqliteTable("workday_exceptions", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  startDate: text("start_date").notNull(),
+  endDate: text("end_date").notNull(),
+  type: text("type").notNull().default("non_working"),
+  category: text("category").notNull().default("company_holiday"),
+  recurrence: text("recurrence").notNull().default("one_time"),
+  notes: text("notes"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+})
+
+export const scheduleBaselines = sqliteTable("schedule_baselines", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id")
+    .notNull()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  snapshotData: text("snapshot_data").notNull(),
+  createdAt: text("created_at").notNull(),
+})
+
 export type Project = typeof projects.$inferSelect
 export type ScheduleTask = typeof scheduleTasks.$inferSelect
 export type NewScheduleTask = typeof scheduleTasks.$inferInsert
 export type TaskDependency = typeof taskDependencies.$inferSelect
 export type NewTaskDependency = typeof taskDependencies.$inferInsert
+export type WorkdayException = typeof workdayExceptions.$inferSelect
+export type NewWorkdayException = typeof workdayExceptions.$inferInsert
+export type ScheduleBaseline = typeof scheduleBaselines.$inferSelect
+export type NewScheduleBaseline = typeof scheduleBaselines.$inferInsert

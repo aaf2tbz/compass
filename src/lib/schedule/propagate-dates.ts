@@ -1,4 +1,8 @@
-import type { ScheduleTaskData, TaskDependencyData } from "./types"
+import type {
+  ScheduleTaskData,
+  TaskDependencyData,
+  WorkdayExceptionData,
+} from "./types"
 import { calculateEndDate, addBusinessDays } from "./business-days"
 
 interface PropagationResult {
@@ -8,7 +12,8 @@ interface PropagationResult {
 export function propagateDates(
   changedTaskId: string,
   tasks: ScheduleTaskData[],
-  dependencies: TaskDependencyData[]
+  dependencies: TaskDependencyData[],
+  exceptions: WorkdayExceptionData[] = []
 ): PropagationResult {
   const taskMap = new Map(tasks.map((t) => [t.id, { ...t }]))
   const updates = new Map<string, { startDate: string; endDateCalculated: string }>()
@@ -43,9 +48,10 @@ export function propagateDates(
       // successor starts after predecessor ends + lag
       const newStart = addBusinessDays(
         current.endDateCalculated,
-        1 + dep.lagDays
+        1 + dep.lagDays,
+        exceptions
       )
-      const newEnd = calculateEndDate(newStart, successor.workdays)
+      const newEnd = calculateEndDate(newStart, successor.workdays, exceptions)
 
       if (newStart !== successor.startDate || newEnd !== successor.endDateCalculated) {
         successor.startDate = newStart

@@ -4,7 +4,15 @@ import { projects } from "@/db/schema"
 import { eq } from "drizzle-orm"
 import { notFound } from "next/navigation"
 import { getSchedule } from "@/app/actions/schedule"
+import { getBaselines } from "@/app/actions/baselines"
 import { ScheduleView } from "@/components/schedule/schedule-view"
+import type { ScheduleData, ScheduleBaselineData } from "@/lib/schedule/types"
+
+const emptySchedule: ScheduleData = {
+  tasks: [],
+  dependencies: [],
+  exceptions: [],
+}
 
 export default async function SchedulePage({
   params,
@@ -12,25 +20,41 @@ export default async function SchedulePage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const { env } = await getCloudflareContext()
-  const db = getDb(env.DB)
 
-  const [project] = await db
-    .select()
-    .from(projects)
-    .where(eq(projects.id, id))
-    .limit(1)
+  let projectName = "Project"
+  let schedule: ScheduleData = emptySchedule
+  let baselines: ScheduleBaselineData[] = []
 
-  if (!project) notFound()
+  try {
+    const { env } = await getCloudflareContext()
+    if (!env?.DB) throw new Error("D1 not available")
 
-  const schedule = await getSchedule(id)
+    const db = getDb(env.DB)
+    const [project] = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, id))
+      .limit(1)
+
+    if (!project) notFound()
+
+    projectName = project.name
+    ;[schedule, baselines] = await Promise.all([
+      getSchedule(id),
+      getBaselines(id),
+    ])
+  } catch (e: any) {
+    if (e?.digest === "NEXT_NOT_FOUND") throw e
+    console.warn("D1 unavailable in dev mode, using empty data")
+  }
 
   return (
     <div className="p-6">
       <ScheduleView
         projectId={id}
-        projectName={project.name}
+        projectName={projectName}
         initialData={schedule}
+        baselines={baselines}
       />
     </div>
   )

@@ -1,22 +1,41 @@
-import { addDays, isWeekend, parseISO, format } from "date-fns"
+import { addDays, isWeekend, parseISO, format, isWithinInterval } from "date-fns"
+import type { WorkdayExceptionData } from "./types"
+
+function isExceptionDay(
+  date: Date,
+  exceptions: WorkdayExceptionData[]
+): boolean {
+  return exceptions.some((ex) => {
+    const start = parseISO(ex.startDate)
+    const end = parseISO(ex.endDate)
+    return isWithinInterval(date, { start, end })
+  })
+}
+
+function isNonWorkday(
+  date: Date,
+  exceptions: WorkdayExceptionData[] = []
+): boolean {
+  return isWeekend(date) || isExceptionDay(date, exceptions)
+}
 
 export function calculateEndDate(
   startDate: string,
-  workdays: number
+  workdays: number,
+  exceptions: WorkdayExceptionData[] = []
 ): string {
   if (workdays <= 0) return startDate
 
   let current = parseISO(startDate)
   let remaining = workdays
 
-  // start date counts as day 1 if it's a business day
-  if (!isWeekend(current)) {
+  if (!isNonWorkday(current, exceptions)) {
     remaining--
   }
 
   while (remaining > 0) {
     current = addDays(current, 1)
-    if (!isWeekend(current)) {
+    if (!isNonWorkday(current, exceptions)) {
       remaining--
     }
   }
@@ -26,14 +45,15 @@ export function calculateEndDate(
 
 export function countBusinessDays(
   startDate: string,
-  endDate: string
+  endDate: string,
+  exceptions: WorkdayExceptionData[] = []
 ): number {
   let current = parseISO(startDate)
   const end = parseISO(endDate)
   let count = 0
 
   while (current <= end) {
-    if (!isWeekend(current)) {
+    if (!isNonWorkday(current, exceptions)) {
       count++
     }
     current = addDays(current, 1)
@@ -44,7 +64,8 @@ export function countBusinessDays(
 
 export function addBusinessDays(
   date: string,
-  days: number
+  days: number,
+  exceptions: WorkdayExceptionData[] = []
 ): string {
   let current = parseISO(date)
   let remaining = Math.abs(days)
@@ -52,7 +73,7 @@ export function addBusinessDays(
 
   while (remaining > 0) {
     current = addDays(current, direction)
-    if (!isWeekend(current)) {
+    if (!isNonWorkday(current, exceptions)) {
       remaining--
     }
   }

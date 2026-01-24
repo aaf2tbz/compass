@@ -19,6 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { Slider } from "@/components/ui/slider"
 import {
   Select,
   SelectContent,
@@ -53,9 +54,11 @@ const phases: { value: ConstructionPhase; label: string }[] = [
 const taskSchema = z.object({
   title: z.string().min(1, "Title is required"),
   startDate: z.string().min(1, "Start date is required"),
-  workdays: z.coerce.number().min(1, "Must be at least 1 day"),
+  workdays: z.number().min(1, "Must be at least 1 day"),
   phase: z.string().min(1, "Phase is required"),
   isMilestone: z.boolean(),
+  percentComplete: z.number().min(0).max(100),
+  assignedTo: z.string(),
 })
 
 type TaskFormValues = z.infer<typeof taskSchema>
@@ -84,6 +87,8 @@ export function TaskFormDialog({
       workdays: 5,
       phase: "preconstruction",
       isMilestone: false,
+      percentComplete: 0,
+      assignedTo: "",
     },
   })
 
@@ -95,6 +100,8 @@ export function TaskFormDialog({
         workdays: editingTask.workdays,
         phase: editingTask.phase,
         isMilestone: editingTask.isMilestone,
+        percentComplete: editingTask.percentComplete,
+        assignedTo: editingTask.assignedTo ?? "",
       })
     } else {
       form.reset({
@@ -103,6 +110,8 @@ export function TaskFormDialog({
         workdays: 5,
         phase: "preconstruction",
         isMilestone: false,
+        percentComplete: 0,
+        assignedTo: "",
       })
     }
   }, [editingTask, form])
@@ -118,9 +127,15 @@ export function TaskFormDialog({
   async function onSubmit(values: TaskFormValues) {
     let result
     if (isEditing) {
-      result = await updateTask(editingTask.id, values)
+      result = await updateTask(editingTask.id, {
+        ...values,
+        assignedTo: values.assignedTo || null,
+      })
     } else {
-      result = await createTask(projectId, values)
+      result = await createTask(projectId, {
+        ...values,
+        assignedTo: values.assignedTo || undefined,
+      })
     }
 
     if (result.success) {
@@ -178,7 +193,17 @@ export function TaskFormDialog({
                   <FormItem>
                     <FormLabel>Workdays</FormLabel>
                     <FormControl>
-                      <Input type="number" min={1} {...field} />
+                      <Input
+                        type="number"
+                        min={1}
+                        value={field.value}
+                        onChange={(e) =>
+                          field.onChange(Number(e.target.value) || 0)
+                        }
+                        onBlur={field.onBlur}
+                        ref={field.ref}
+                        name={field.name}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -215,6 +240,42 @@ export function TaskFormDialog({
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="percentComplete"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Complete: {field.value}%
+                  </FormLabel>
+                  <FormControl>
+                    <Slider
+                      min={0}
+                      max={100}
+                      step={5}
+                      value={[field.value]}
+                      onValueChange={([val]) => field.onChange(val)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="assignedTo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Assigned To</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Person name" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

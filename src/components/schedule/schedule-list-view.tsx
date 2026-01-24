@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useMemo } from "react"
 import {
   useReactTable,
   getCoreRowModel,
-  getGroupedRowModel,
+  getPaginationRowModel,
   flexRender,
   type ColumnDef,
 } from "@tanstack/react-table"
@@ -17,45 +17,12 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
-  IconPlus,
-  IconLink,
-  IconGripVertical,
+  IconPencil,
   IconTrash,
+  IconLink,
 } from "@tabler/icons-react"
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core"
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
-import { TaskFormDialog } from "./task-form-dialog"
-import { DependencyDialog } from "./dependency-dialog"
-import {
-  deleteTask,
-  updateTaskStatus,
-  reorderTasks,
-} from "@/app/actions/schedule"
-import { getPhaseColor } from "@/lib/schedule/phase-colors"
-import type {
-  ScheduleTaskData,
-  TaskDependencyData,
-  TaskStatus,
-} from "@/lib/schedule/types"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
 import {
   Select,
   SelectContent,
@@ -63,6 +30,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { TaskFormDialog } from "./task-form-dialog"
+import { DependencyDialog } from "./dependency-dialog"
+import { deleteTask } from "@/app/actions/schedule"
+import type {
+  ScheduleTaskData,
+  TaskDependencyData,
+} from "@/lib/schedule/types"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { format, parseISO } from "date-fns"
 
 interface ScheduleListViewProps {
   projectId: string
@@ -70,47 +47,85 @@ interface ScheduleListViewProps {
   dependencies: TaskDependencyData[]
 }
 
-const statusOptions: { value: TaskStatus; label: string }[] = [
-  { value: "PENDING", label: "Pending" },
-  { value: "IN_PROGRESS", label: "In Progress" },
-  { value: "COMPLETE", label: "Complete" },
-  { value: "BLOCKED", label: "Blocked" },
-]
+function StatusDot({ task }: { task: ScheduleTaskData }) {
+  let color = "bg-gray-400"
+  if (task.status === "COMPLETE") color = "bg-green-500"
+  else if (task.status === "IN_PROGRESS") color = "bg-blue-500"
+  else if (task.status === "BLOCKED") color = "bg-red-500"
+  else if (task.isCriticalPath) color = "bg-orange-500"
+  return <span className={`inline-block size-2.5 rounded-full ${color}`} />
+}
 
-function SortableRow({
-  row,
-  children,
+function ProgressRing({
+  percent,
+  size = 28,
 }: {
-  row: { id: string }
-  children: React.ReactNode
+  percent: number
+  size?: number
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: row.id })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  }
+  const stroke = 3
+  const radius = (size - stroke) / 2
+  const circumference = 2 * Math.PI * radius
+  const offset = circumference - (percent / 100) * circumference
 
   return (
-    <TableRow ref={setNodeRef} style={style}>
-      <TableCell className="w-8">
-        <IconGripVertical
-          className="size-4 text-muted-foreground cursor-grab"
-          {...attributes}
-          {...listeners}
+    <div className="relative inline-flex items-center justify-center">
+      <svg width={size} height={size} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={stroke}
+          className="text-muted-foreground/20"
         />
-      </TableCell>
-      {children}
-    </TableRow>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={stroke}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className="text-primary"
+        />
+      </svg>
+      <span className="absolute text-[9px] font-medium">
+        {percent}%
+      </span>
+    </div>
   )
+}
+
+function InitialsAvatar({ name }: { name: string }) {
+  const initials = name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase()
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <div className="size-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-medium">
+        {initials}
+      </div>
+      <span className="text-xs text-muted-foreground truncate max-w-[80px]">
+        {name}
+      </span>
+    </div>
+  )
+}
+
+function formatDate(dateStr: string): string {
+  try {
+    return format(parseISO(dateStr), "MMM d, yyyy")
+  } catch {
+    return dateStr
+  }
 }
 
 export function ScheduleListView({
@@ -123,29 +138,11 @@ export function ScheduleListView({
   const [editingTask, setEditingTask] = useState<ScheduleTaskData | null>(null)
   const [depDialogOpen, setDepDialogOpen] = useState(false)
   const [localTasks, setLocalTasks] = useState(tasks)
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     setLocalTasks(tasks)
   }, [tasks])
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  )
-
-  const handleStatusChange = useCallback(
-    async (taskId: string, status: TaskStatus) => {
-      const result = await updateTaskStatus(taskId, status)
-      if (result.success) {
-        router.refresh()
-      } else {
-        toast.error(result.error)
-      }
-    },
-    [router]
-  )
 
   const handleDelete = useCallback(
     async (taskId: string) => {
@@ -159,147 +156,148 @@ export function ScheduleListView({
     [router]
   )
 
-  const handleDragEnd = useCallback(
-    async (event: DragEndEvent) => {
-      const { active, over } = event
-      if (!over || active.id === over.id) return
-
-      const oldIndex = localTasks.findIndex((t) => t.id === active.id)
-      const newIndex = localTasks.findIndex((t) => t.id === over.id)
-      const reordered = arrayMove(localTasks, oldIndex, newIndex)
-      setLocalTasks(reordered)
-
-      const items = reordered.map((t, i) => ({ id: t.id, sortOrder: i }))
-      await reorderTasks(projectId, items)
-      router.refresh()
-    },
-    [localTasks, projectId, router]
-  )
-
-  const columns: ColumnDef<ScheduleTaskData>[] = [
-    {
-      accessorKey: "title",
-      header: "Task",
-      cell: ({ row }) => (
-        <button
-          className="text-left font-medium hover:underline"
-          onClick={() => {
-            setEditingTask(row.original)
-            setTaskFormOpen(true)
-          }}
-        >
-          {row.original.title}
-          {row.original.isMilestone && (
-            <span className="ml-2 text-xs text-muted-foreground">◆</span>
-          )}
-        </button>
-      ),
-    },
-    {
-      accessorKey: "startDate",
-      header: "Start",
-      cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">
-          {row.original.startDate}
-        </span>
-      ),
-    },
-    {
-      accessorKey: "endDateCalculated",
-      header: "End",
-      cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">
-          {row.original.endDateCalculated}
-        </span>
-      ),
-    },
-    {
-      accessorKey: "workdays",
-      header: "Days",
-      cell: ({ row }) => (
-        <span className="text-sm">{row.original.workdays}</span>
-      ),
-    },
-    {
-      accessorKey: "phase",
-      header: "Phase",
-      cell: ({ row }) => {
-        const colors = getPhaseColor(row.original.phase)
-        return (
-          <Badge variant="secondary" className={colors.badge}>
-            {row.original.phase}
-          </Badge>
-        )
+  const columns: ColumnDef<ScheduleTaskData>[] = useMemo(
+    () => [
+      {
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={table.getIsAllRowsSelected()}
+            onCheckedChange={(value) =>
+              table.toggleAllRowsSelected(!!value)
+            }
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+          />
+        ),
+        size: 32,
       },
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => (
-        <Select
-          value={row.original.status}
-          onValueChange={(val) =>
-            handleStatusChange(row.original.id, val as TaskStatus)
-          }
-        >
-          <SelectTrigger className="h-7 w-[120px] text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {statusOptions.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      ),
-    },
-    {
-      id: "criticalPath",
-      header: "CP",
-      cell: ({ row }) =>
-        row.original.isCriticalPath ? (
-          <Badge variant="destructive" className="text-xs">
-            Critical
-          </Badge>
-        ) : null,
-    },
-    {
-      id: "actions",
-      cell: ({ row }) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-7"
-          onClick={() => handleDelete(row.original.id)}
-        >
-          <IconTrash className="size-4" />
-        </Button>
-      ),
-    },
-  ]
+      {
+        id: "idNum",
+        header: "#",
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground">
+            {row.original.sortOrder + 1}
+          </span>
+        ),
+        size: 40,
+      },
+      {
+        accessorKey: "title",
+        header: "Title",
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <StatusDot task={row.original} />
+            <span className="font-medium text-sm truncate max-w-[200px]">
+              {row.original.title}
+            </span>
+          </div>
+        ),
+      },
+      {
+        id: "complete",
+        header: "Complete",
+        cell: ({ row }) => (
+          <ProgressRing percent={row.original.percentComplete} />
+        ),
+        size: 70,
+      },
+      {
+        accessorKey: "phase",
+        header: "Phase",
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground truncate max-w-[80px] inline-block">
+            {row.original.phase}
+          </span>
+        ),
+      },
+      {
+        id: "duration",
+        header: "Duration",
+        cell: ({ row }) => (
+          <span className="text-xs">
+            {row.original.workdays} {row.original.workdays === 1 ? "day" : "days"}
+          </span>
+        ),
+        size: 80,
+      },
+      {
+        accessorKey: "startDate",
+        header: "Start",
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground">
+            {formatDate(row.original.startDate)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "endDateCalculated",
+        header: "End",
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground">
+            {formatDate(row.original.endDateCalculated)}
+          </span>
+        ),
+      },
+      {
+        id: "assignedTo",
+        header: "Assigned To",
+        cell: ({ row }) =>
+          row.original.assignedTo ? (
+            <InitialsAvatar name={row.original.assignedTo} />
+          ) : (
+            <span className="text-xs text-muted-foreground">-</span>
+          ),
+      },
+      {
+        id: "actions",
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7"
+              onClick={() => {
+                setEditingTask(row.original)
+                setTaskFormOpen(true)
+              }}
+            >
+              <IconPencil className="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7"
+              onClick={() => handleDelete(row.original.id)}
+            >
+              <IconTrash className="size-3.5" />
+            </Button>
+          </div>
+        ),
+        size: 80,
+      },
+    ],
+    [handleDelete]
+  )
 
   const table = useReactTable({
     data: localTasks,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     getRowId: (row) => row.id,
+    onRowSelectionChange: setRowSelection,
+    state: { rowSelection },
+    initialState: { pagination: { pageSize: 25 } },
   })
 
   return (
     <div>
       <div className="flex gap-2 mb-4">
-        <Button
-          size="sm"
-          onClick={() => {
-            setEditingTask(null)
-            setTaskFormOpen(true)
-          }}
-        >
-          <IconPlus className="size-4 mr-1" />
-          Add Task
-        </Button>
         <Button
           size="sm"
           variant="outline"
@@ -312,61 +310,96 @@ export function ScheduleListView({
       </div>
 
       <div className="rounded-md border">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  <TableHead className="w-8" />
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="text-center py-8 text-muted-foreground"
+                >
+                  No tasks yet. Click &quot;New Schedule Item&quot; to get started.
+                </TableCell>
+              </TableRow>
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </TableCell>
                   ))}
                 </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              <SortableContext
-                items={localTasks.map((t) => t.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                {table.getRowModel().rows.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length + 1}
-                      className="text-center py-8 text-muted-foreground"
-                    >
-                      No tasks yet. Click &quot;Add Task&quot; to get started.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  table.getRowModel().rows.map((row) => (
-                    <SortableRow key={row.id} row={row}>
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      ))}
-                    </SortableRow>
-                  ))
-                )}
-              </SortableContext>
-            </TableBody>
-          </Table>
-        </DndContext>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="flex items-center justify-between mt-3 px-1">
+        <span className="text-xs text-muted-foreground">
+          {table.getState().pagination.pageIndex *
+            table.getState().pagination.pageSize +
+            1}
+          -
+          {Math.min(
+            (table.getState().pagination.pageIndex + 1) *
+              table.getState().pagination.pageSize,
+            localTasks.length
+          )}{" "}
+          of {localTasks.length} items
+        </span>
+        <div className="flex items-center gap-2">
+          <Select
+            value={String(table.getState().pagination.pageSize)}
+            onValueChange={(val) => table.setPageSize(Number(val))}
+          >
+            <SelectTrigger className="h-7 w-[70px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            Prev
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            Next
+          </Button>
+        </div>
       </div>
 
       <TaskFormDialog

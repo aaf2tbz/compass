@@ -2,7 +2,12 @@
 
 import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { getDb } from "@/db"
-import { scheduleTasks, taskDependencies, projects } from "@/db/schema"
+import {
+  scheduleTasks,
+  taskDependencies,
+  workdayExceptions,
+  projects,
+} from "@/db/schema"
 import { eq, asc } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { calculateEndDate } from "@/lib/schedule/business-days"
@@ -12,8 +17,27 @@ import { propagateDates } from "@/lib/schedule/propagate-dates"
 import type {
   TaskStatus,
   DependencyType,
+  ExceptionCategory,
+  ExceptionRecurrence,
   ScheduleData,
+  WorkdayExceptionData,
 } from "@/lib/schedule/types"
+
+async function fetchExceptions(
+  db: ReturnType<typeof getDb>,
+  projectId: string
+): Promise<WorkdayExceptionData[]> {
+  const rows = await db
+    .select()
+    .from(workdayExceptions)
+    .where(eq(workdayExceptions.projectId, projectId))
+
+  return rows.map((r) => ({
+    ...r,
+    category: r.category as ExceptionCategory,
+    recurrence: r.recurrence as ExceptionRecurrence,
+  }))
+}
 
 export async function getSchedule(
   projectId: string
@@ -28,8 +52,8 @@ export async function getSchedule(
     .orderBy(asc(scheduleTasks.sortOrder))
 
   const deps = await db.select().from(taskDependencies)
+  const exceptions = await fetchExceptions(db, projectId)
 
-  // filter deps to only include tasks in this project
   const taskIds = new Set(tasks.map((t) => t.id))
   const projectDeps = deps.filter(
     (d) => taskIds.has(d.predecessorId) && taskIds.has(d.successorId)
@@ -45,6 +69,7 @@ export async function getSchedule(
       ...d,
       type: d.type as DependencyType,
     })),
+    exceptions,
   }
 }
 
@@ -56,16 +81,20 @@ export async function createTask(
     workdays: number
     phase: string
     isMilestone?: boolean
+    percentComplete?: number
+    assignedTo?: string
   }
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const { env } = await getCloudflareContext()
     const db = getDb(env.DB)
 
-    const endDate = calculateEndDate(data.startDate, data.workdays)
+    const exceptions = await fetchExceptions(db, projectId)
+    const endDate = calculateEndDate(
+      data.startDate, data.workdays, exceptions
+    )
     const now = new Date().toISOString()
 
-    // get next sort order
     const existing = await db
       .select({ sortOrder: scheduleTasks.sortOrder })
       .from(scheduleTasks)
@@ -88,6 +117,8 @@ export async function createTask(
       status: "PENDING",
       isCriticalPath: false,
       isMilestone: data.isMilestone ?? false,
+      percentComplete: data.percentComplete ?? 0,
+      assignedTo: data.assignedTo ?? null,
       sortOrder: nextOrder,
       createdAt: now,
       updatedAt: now,
@@ -110,6 +141,8 @@ export async function updateTask(
     workdays?: number
     phase?: string
     isMilestone?: boolean
+    percentComplete?: number
+    assignedTo?: string | null
   }
 ): Promise<{ success: boolean; error?: string }> {
   try {
@@ -124,9 +157,10 @@ export async function updateTask(
 
     if (!task) return { success: false, error: "Task not found" }
 
+    const exceptions = await fetchExceptions(db, task.projectId)
     const startDate = data.startDate ?? task.startDate
     const workdays = data.workdays ?? task.workdays
-    const endDate = calculateEndDate(startDate, workdays)
+    const endDate = calculateEndDate(startDate, workdays, exceptions)
 
     await db
       .update(scheduleTasks)
@@ -136,18 +170,34 @@ export async function updateTask(
         workdays,
         endDateCalculated: endDate,
         ...(data.phase && { phase: data.phase }),
-        ...(data.isMilestone !== undefined && { isMilestone: data.isMilestone }),
+        ...(data.isMilestone !== undefined && {
+          isMilestone: data.isMilestone,
+        }),
+        ...(data.percentComplete !== undefined && {
+          percentComplete: data.percentComplete,
+        }),
+        ...(data.assignedTo !== undefined && {
+          assignedTo: data.assignedTo,
+        }),
         updatedAt: new Date().toISOString(),
       })
       .where(eq(scheduleTasks.id, taskId))
 
     // propagate date changes to downstream tasks
     const schedule = await getSchedule(task.projectId)
-    const updatedTask = { ...task, startDate, workdays, endDateCalculated: endDate }
+    const updatedTask = {
+      ...task,
+      status: task.status as TaskStatus,
+      startDate,
+      workdays,
+      endDateCalculated: endDate,
+    }
     const allTasks = schedule.tasks.map((t) =>
       t.id === taskId ? updatedTask : t
     )
-    const { updatedTasks } = propagateDates(taskId, allTasks, schedule.dependencies)
+    const { updatedTasks } = propagateDates(
+      taskId, allTasks, schedule.dependencies, exceptions
+    )
 
     for (const [id, dates] of updatedTasks) {
       await db
@@ -248,7 +298,8 @@ export async function createDependency(data: {
     const { updatedTasks } = propagateDates(
       data.predecessorId,
       updatedSchedule.tasks,
-      updatedSchedule.dependencies
+      updatedSchedule.dependencies,
+      updatedSchedule.exceptions
     )
 
     for (const [id, dates] of updatedTasks) {

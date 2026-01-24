@@ -17,6 +17,15 @@ export type ConstructionPhase =
   | "landscaping"
   | "closeout"
 
+export type ExceptionCategory =
+  | "national_holiday"
+  | "state_holiday"
+  | "vacation_day"
+  | "company_holiday"
+  | "weather_day"
+
+export type ExceptionRecurrence = "one_time" | "yearly"
+
 export interface ScheduleTaskData {
   id: string
   projectId: string
@@ -28,6 +37,8 @@ export interface ScheduleTaskData {
   status: TaskStatus
   isCriticalPath: boolean
   isMilestone: boolean
+  percentComplete: number
+  assignedTo: string | null
   sortOrder: number
   createdAt: string
   updatedAt: string
@@ -41,7 +52,30 @@ export interface TaskDependencyData {
   lagDays: number
 }
 
+export interface WorkdayExceptionData {
+  id: string
+  projectId: string
+  title: string
+  startDate: string
+  endDate: string
+  type: string
+  category: ExceptionCategory
+  recurrence: ExceptionRecurrence
+  notes: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ScheduleBaselineData {
+  id: string
+  projectId: string
+  name: string
+  snapshotData: string
+  createdAt: string
+}
+
 export interface ScheduleData {
   tasks: ScheduleTaskData[]
   dependencies: TaskDependencyData[]
+  exceptions: WorkdayExceptionData[]
 }
