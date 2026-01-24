@@ -148,6 +148,25 @@
   fill: oklch(0.85 0.08 170 / 0.15);
 }
 
+/* summary bars (collapsed phase bars) */
+.gantt .bar-wrapper[data-id^="phase-"] .bar {
+  rx: 6;
+  ry: 6;
+  stroke-width: 1.5;
+  opacity: 0.85;
+}
+
+.gantt .bar-wrapper[data-id^="phase-"] .bar-progress {
+  opacity: 0.9;
+  rx: 6;
+  ry: 6;
+}
+
+.gantt .bar-wrapper[data-id^="phase-"] .bar-label {
+  font-weight: 600;
+  font-size: 11px;
+}
+
 /* phase-specific bar colors */
 .gantt .bar-wrapper.phase-foundation .bar { fill: oklch(0.7 0.12 240); }
 .gantt .bar-wrapper.phase-framing .bar { fill: oklch(0.75 0.14 50); }

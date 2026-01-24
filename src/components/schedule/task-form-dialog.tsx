@@ -39,25 +39,15 @@ import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import { createTask, updateTask } from "@/app/actions/schedule"
 import { calculateEndDate } from "@/lib/schedule/business-days"
-import type { ScheduleTaskData, ConstructionPhase } from "@/lib/schedule/types"
+import type { ScheduleTaskData } from "@/lib/schedule/types"
+import { PHASE_ORDER, PHASE_LABELS } from "@/lib/schedule/phase-colors"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
-const phases: { value: ConstructionPhase; label: string }[] = [
-  { value: "preconstruction", label: "Preconstruction" },
-  { value: "sitework", label: "Sitework" },
-  { value: "foundation", label: "Foundation" },
-  { value: "framing", label: "Framing" },
-  { value: "roofing", label: "Roofing" },
-  { value: "electrical", label: "Electrical" },
-  { value: "plumbing", label: "Plumbing" },
-  { value: "hvac", label: "HVAC" },
-  { value: "insulation", label: "Insulation" },
-  { value: "drywall", label: "Drywall" },
-  { value: "finish", label: "Finish" },
-  { value: "landscaping", label: "Landscaping" },
-  { value: "closeout", label: "Closeout" },
-]
+const phases = PHASE_ORDER.map((value) => ({
+  value,
+  label: PHASE_LABELS[value],
+}))
 
 const taskSchema = z.object({
   title: z.string().min(1, "Title is required"),
