@@ -36,6 +36,9 @@ export default async function DashboardLayout({
             </div>
           </div>
         </SidebarInset>
+        <p className="pointer-events-none fixed bottom-3 left-0 right-0 text-center text-xs text-muted-foreground/60">
+          Pre-alpha build
+        </p>
       </SidebarProvider>
     </CommandMenuProvider>
     </SettingsProvider>
