@@ -7,6 +7,10 @@ import {
 export const projects = sqliteTable("projects", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
+  status: text("status").notNull().default("OPEN"),
+  address: text("address"),
+  clientName: text("client_name"),
+  projectManager: text("project_manager"),
   createdAt: text("created_at").notNull(),
 })
 
@@ -72,6 +76,24 @@ export const scheduleBaselines = sqliteTable("schedule_baselines", {
   createdAt: text("created_at").notNull(),
 })
 
+export const customers = sqliteTable("customers", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  createdAt: text("created_at").notNull(),
+})
+
+export const vendors = sqliteTable("vendors", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  category: text("category").notNull().default("Subcontractor"),
+  email: text("email"),
+  phone: text("phone"),
+  address: text("address"),
+  createdAt: text("created_at").notNull(),
+})
+
 export type Project = typeof projects.$inferSelect
 export type ScheduleTask = typeof scheduleTasks.$inferSelect
 export type NewScheduleTask = typeof scheduleTasks.$inferInsert
@@ -81,3 +103,7 @@ export type WorkdayException = typeof workdayExceptions.$inferSelect
 export type NewWorkdayException = typeof workdayExceptions.$inferInsert
 export type ScheduleBaseline = typeof scheduleBaselines.$inferSelect
 export type NewScheduleBaseline = typeof scheduleBaselines.$inferInsert
+export type Customer = typeof customers.$inferSelect
+export type NewCustomer = typeof customers.$inferInsert
+export type Vendor = typeof vendors.$inferSelect
+export type NewVendor = typeof vendors.$inferInsert

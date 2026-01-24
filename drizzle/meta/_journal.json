@@ -15,6 +15,20 @@
       "when": 1769222679525,
       "tag": "0001_gorgeous_sebastian_shaw",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1769231679439,
+      "tag": "0002_tricky_harpoon",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1769286212480,
+      "tag": "0003_burly_kabuki",
+      "breakpoints": true
     }
   ]
 }
