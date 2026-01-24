@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState } from "react"
 import type { FrappeTask } from "@/lib/schedule/gantt-transform"
+import "./gantt.css"
 
 type ViewMode = "Day" | "Week" | "Month"
 
@@ -66,6 +67,15 @@ export function GanttChart({
         },
       })
 
+      // remove overflow from inner gantt-container so popup isn't clipped
+      // the parent wrapper handles horizontal scrolling instead
+      const ganttContainer = containerRef.current.querySelector(
+        ".gantt-container"
+      ) as HTMLElement | null
+      if (ganttContainer) {
+        ganttContainer.style.overflow = "visible"
+      }
+
       setLoaded(true)
     }
 
@@ -88,7 +98,7 @@ export function GanttChart({
   }
 
   return (
-    <div className="gantt-container overflow-x-auto">
+    <div className="gantt-wrapper relative overflow-x-auto">
       <div ref={containerRef} />
     </div>
   )

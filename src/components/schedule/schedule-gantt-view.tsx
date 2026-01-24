@@ -87,8 +87,8 @@ export function ScheduleGanttView({
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
+    <div className="flex flex-col flex-1 min-h-0">
+      <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-3">
           {(["Day", "Week", "Month"] as ViewMode[]).map((mode) => (
             <Button
@@ -134,7 +134,7 @@ export function ScheduleGanttView({
 
       <ResizablePanelGroup
         orientation="horizontal"
-        className="border rounded-md min-h-[400px]"
+        className="border rounded-md flex-1 min-h-[300px]"
       >
         <ResizablePanel defaultSize={30} minSize={20}>
           <div className="h-full overflow-auto">

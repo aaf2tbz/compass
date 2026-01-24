@@ -103,8 +103,8 @@ export function ScheduleCalendarView({
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
+    <div className="flex flex-col flex-1 min-h-0">
+      <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -144,7 +144,7 @@ export function ScheduleCalendarView({
         </Select>
       </div>
 
-      <div className="border rounded-md overflow-hidden">
+      <div className="border rounded-md overflow-hidden flex flex-col flex-1 min-h-0">
         <div className="grid grid-cols-7 border-b">
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
             (day) => (
@@ -158,7 +158,7 @@ export function ScheduleCalendarView({
           )}
         </div>
 
-        <div className="grid grid-cols-7">
+        <div className="grid grid-cols-7 flex-1">
           {days.map((day) => {
             const dateKey = format(day, "yyyy-MM-dd")
             const dayTasks = tasksByDate.get(dateKey) || []
@@ -174,7 +174,7 @@ export function ScheduleCalendarView({
             return (
               <div
                 key={dateKey}
-                className={`min-h-[90px] border-r border-b last:border-r-0 p-1 ${
+                className={`min-h-0 border-r border-b last:border-r-0 p-1 ${
                   !inMonth ? "bg-muted/30" : ""
                 } ${isNonWork ? "bg-muted/50" : ""}`}
               >

@@ -296,8 +296,8 @@ export function ScheduleListView({
   })
 
   return (
-    <div>
-      <div className="flex gap-2 mb-4">
+    <div className="flex flex-col flex-1 min-h-0">
+      <div className="flex gap-2 mb-2">
         <Button
           size="sm"
           variant="outline"
@@ -309,7 +309,7 @@ export function ScheduleListView({
         </Button>
       </div>
 
-      <div className="rounded-md border">
+      <div className="rounded-md border flex-1 overflow-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

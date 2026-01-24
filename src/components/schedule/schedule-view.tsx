@@ -35,31 +35,37 @@ export function ScheduleView({
   const [taskFormOpen, setTaskFormOpen] = useState(false)
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">
+    <div className="flex flex-col flex-1 min-h-0">
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="text-lg font-semibold">
           {projectName} - Schedule
         </h1>
+        <Tabs
+          value={topTab}
+          onValueChange={(v) => setTopTab(v as TopTab)}
+        >
+          <TabsList>
+            <TabsTrigger value="schedule">Schedule</TabsTrigger>
+            <TabsTrigger value="baseline">Baseline</TabsTrigger>
+            <TabsTrigger value="exceptions">
+              Workday Exceptions
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       <Tabs
         value={topTab}
         onValueChange={(v) => setTopTab(v as TopTab)}
+        className="flex flex-col flex-1 min-h-0"
       >
-        <TabsList>
-          <TabsTrigger value="schedule">Schedule</TabsTrigger>
-          <TabsTrigger value="baseline">Baseline</TabsTrigger>
-          <TabsTrigger value="exceptions">
-            Workday Exceptions
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="schedule" className="mt-0">
+        <TabsContent value="schedule" className="mt-0 flex flex-col flex-1 min-h-0">
           <ScheduleToolbar onNewItem={() => setTaskFormOpen(true)} />
 
           <Tabs
             value={subTab}
             onValueChange={(v) => setSubTab(v as ScheduleSubTab)}
+            className="flex flex-col flex-1 min-h-0"
           >
             <TabsList className="bg-transparent border-b rounded-none h-auto p-0 gap-4">
               <TabsTrigger
@@ -82,7 +88,7 @@ export function ScheduleView({
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="calendar" className="mt-4">
+            <TabsContent value="calendar" className="mt-2 flex flex-col flex-1 min-h-0">
               <ScheduleCalendarView
                 projectId={projectId}
                 tasks={initialData.tasks}
@@ -90,7 +96,7 @@ export function ScheduleView({
               />
             </TabsContent>
 
-            <TabsContent value="list" className="mt-4">
+            <TabsContent value="list" className="mt-2 flex flex-col flex-1 min-h-0">
               <ScheduleListView
                 projectId={projectId}
                 tasks={initialData.tasks}
@@ -98,7 +104,7 @@ export function ScheduleView({
               />
             </TabsContent>
 
-            <TabsContent value="gantt" className="mt-4">
+            <TabsContent value="gantt" className="mt-2 flex flex-col flex-1 min-h-0">
               <ScheduleGanttView
                 projectId={projectId}
                 tasks={initialData.tasks}
@@ -108,7 +114,7 @@ export function ScheduleView({
           </Tabs>
         </TabsContent>
 
-        <TabsContent value="baseline" className="mt-4">
+        <TabsContent value="baseline" className="mt-2">
           <ScheduleBaselineView
             projectId={projectId}
             baselines={baselines}
@@ -116,7 +122,7 @@ export function ScheduleView({
           />
         </TabsContent>
 
-        <TabsContent value="exceptions" className="mt-4">
+        <TabsContent value="exceptions" className="mt-2">
           <WorkdayExceptionsView
             projectId={projectId}
             exceptions={initialData.exceptions}

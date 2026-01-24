@@ -25,7 +25,7 @@ export function ScheduleToolbar({ onNewItem }: ScheduleToolbarProps) {
   const [offlineMode, setOfflineMode] = useState(false)
 
   return (
-    <div className="flex items-center justify-between py-3 border-b mb-4">
+    <div className="flex items-center justify-between py-1.5 border-b mb-2">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" className="size-8">
           <IconSettings className="size-4" />
