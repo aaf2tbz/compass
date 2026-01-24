@@ -7,14 +7,14 @@ export default function Home() {
 		<div className="flex min-h-screen items-center justify-center p-8">
 			<Card className="w-full max-w-md">
 				<CardHeader className="text-center">
-					<CardTitle className="text-2xl">Dashboard App Template</CardTitle>
+					<CardTitle className="text-2xl">Compass</CardTitle>
 					<CardDescription>
-						A Next.js starter with shadcn/ui components and Cloudflare deployment
+						Work-in-progress development preview
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="flex justify-center">
 					<Button asChild>
-						<Link href="/dashboard">Go to Dashboard</Link>
+						<Link href="/dashboard">Explore Dashboard</Link>
 					</Button>
 				</CardContent>
 			</Card>
