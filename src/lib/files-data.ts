@@ -53,6 +53,57 @@ const pm1 = { name: "Derek Haines" }
 const pm2 = { name: "Rachel Torres" }
 const field1 = { name: "Mike Callahan" }
 
+// ─── CSI Division folder generator ───
+
+const CSI_DIVISIONS = [
+  "00 00 00 Procurement Req",
+  "01 00 00 General Req",
+  "02 00 00 Ext Conditions",
+  "03 00 00 Concrete",
+  "04 00 00 Masonry",
+  "05 00 00 Metals",
+  "06 00 00 Woods Plastics and Composites",
+  "07 00 00 Thermal Protection",
+  "08 00 00 Openings",
+  "09 00 00 Finishes",
+  "10 00 00 Specialties",
+  "11 00 00 Equipment",
+  "12 00 00 Furnishings",
+  "13 00 00 Special Const",
+  "14 00 00 Conveying Equipment",
+  "21 00 00 Fire Suppression",
+  "22 00 00 Plumbing",
+  "23 00 00 HVAC",
+  "26 00 00 Electrical",
+  "27 00 00 Communications",
+  "28 00 00 Safety and Security",
+  "31 00 00 Earthwork",
+  "32 00 00 Exterior Improvement",
+  "33 00 00 Utilities",
+  "48 00 00 Electrical Power Generation Equipment",
+] as const
+
+function buildCsiDivisions(
+  parentId: string,
+  parentPath: string[]
+): FileItem[] {
+  return CSI_DIVISIONS.map((name) => ({
+    id: `${parentId}-csi-${name.slice(0, 2)}`,
+    name,
+    type: "folder" as FileType,
+    size: 0,
+    path: parentPath,
+    createdAt: "2025-07-15T08:00:00Z",
+    modifiedAt: "2025-10-20T14:00:00Z",
+    owner,
+    starred: false,
+    shared: true,
+    sharedWith: [{ ...pm1, role: "editor" as SharedRole }],
+    trashed: false,
+    parentId,
+  }))
+}
+
 export const mockFiles: FileItem[] = [
   // ─── Top-level company folders ───
   {
@@ -656,55 +707,4 @@ export const mockFiles: FileItem[] = [
 export const mockStorageUsage: StorageUsage = {
   used: 156_000_000,
   total: 5_000_000_000,
-}
-
-// ─── CSI Division folder generator ───
-
-const CSI_DIVISIONS = [
-  "00 00 00 Procurement Req",
-  "01 00 00 General Req",
-  "02 00 00 Ext Conditions",
-  "03 00 00 Concrete",
-  "04 00 00 Masonry",
-  "05 00 00 Metals",
-  "06 00 00 Woods Plastics and Composites",
-  "07 00 00 Thermal Protection",
-  "08 00 00 Openings",
-  "09 00 00 Finishes",
-  "10 00 00 Specialties",
-  "11 00 00 Equipment",
-  "12 00 00 Furnishings",
-  "13 00 00 Special Const",
-  "14 00 00 Conveying Equipment",
-  "21 00 00 Fire Suppression",
-  "22 00 00 Plumbing",
-  "23 00 00 HVAC",
-  "26 00 00 Electrical",
-  "27 00 00 Communications",
-  "28 00 00 Safety and Security",
-  "31 00 00 Earthwork",
-  "32 00 00 Exterior Improvement",
-  "33 00 00 Utilities",
-  "48 00 00 Electrical Power Generation Equipment",
-] as const
-
-function buildCsiDivisions(
-  parentId: string,
-  parentPath: string[]
-): FileItem[] {
-  return CSI_DIVISIONS.map((name) => ({
-    id: `${parentId}-csi-${name.slice(0, 2)}`,
-    name,
-    type: "folder" as FileType,
-    size: 0,
-    path: parentPath,
-    createdAt: "2025-07-15T08:00:00Z",
-    modifiedAt: "2025-10-20T14:00:00Z",
-    owner,
-    starred: false,
-    shared: true,
-    sharedWith: [{ ...pm1, role: "editor" as SharedRole }],
-    trashed: false,
-    parentId,
-  }))
 }
