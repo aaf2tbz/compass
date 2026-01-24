@@ -7,7 +7,6 @@ import {
   IconFiles,
   IconFolder,
   IconHelp,
-  IconInnerShadowTop,
   IconSearch,
   IconSettings,
 } from "@tabler/icons-react"
@@ -138,7 +137,18 @@ export function AppSidebar({
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
               <a href="/dashboard">
-                <IconInnerShadowTop className="!size-5" />
+                <span
+                  aria-label="Compass"
+                  className="!size-5 shrink-0 block bg-current"
+                  style={{
+                    maskImage: "url(/logo-black.png)",
+                    maskSize: "contain",
+                    maskRepeat: "no-repeat",
+                    WebkitMaskImage: "url(/logo-black.png)",
+                    WebkitMaskSize: "contain",
+                    WebkitMaskRepeat: "no-repeat",
+                  }}
+                />
                 <span className="text-base font-semibold">
                   COMPASS
                 </span>

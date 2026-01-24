@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Sora, IBM_Plex_Mono } from "next/font/google";
+import { Sora, IBM_Plex_Mono, Playfair_Display } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
@@ -14,9 +14,19 @@ const ibmPlexMono = IBM_Plex_Mono({
 	subsets: ["latin"],
 });
 
+const playfair = Playfair_Display({
+	variable: "--font-serif",
+	subsets: ["latin"],
+	style: ["normal", "italic"],
+});
+
 export const metadata: Metadata = {
-	title: "Dashboard App Template",
-	description: "A Next.js dashboard template with shadcn/ui",
+	title: "Compass",
+	description: "Construction project management by High Performance Structures",
+	icons: {
+		icon: "/favicon.png",
+		apple: "/apple-touch-icon.png",
+	},
 };
 
 export default function RootLayout({
@@ -26,7 +36,7 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en" suppressHydrationWarning>
-			<body className={`${sora.variable} ${ibmPlexMono.variable} font-sans antialiased`}>
+			<body className={`${sora.variable} ${ibmPlexMono.variable} ${playfair.variable} font-sans antialiased`}>
 				<ThemeProvider>
 					{children}
 				</ThemeProvider>
