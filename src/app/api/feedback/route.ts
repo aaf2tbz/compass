@@ -78,7 +78,7 @@ export async function POST(request: Request) {
     createdAt,
   })
 
-  createGithubIssue(env, db, id, {
+  await createGithubIssue(env, db, id, {
     type,
     message: message.trim(),
     name: name?.trim(),
