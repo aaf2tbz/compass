@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Sora, IBM_Plex_Mono } from "next/font/google";
+import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 const sora = Sora({
@@ -24,9 +25,11 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en">
+		<html lang="en" suppressHydrationWarning>
 			<body className={`${sora.variable} ${ibmPlexMono.variable} font-sans antialiased`}>
-				{children}
+				<ThemeProvider>
+					{children}
+				</ThemeProvider>
 			</body>
 		</html>
 	);

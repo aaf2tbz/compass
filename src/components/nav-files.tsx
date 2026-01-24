@@ -54,7 +54,6 @@ export function NavFiles() {
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
-      <SidebarSeparator />
       <SidebarGroup>
         <SidebarGroupContent>
           <SidebarMenu>
@@ -66,7 +65,7 @@ export function NavFiles() {
                   className={cn(
                     activeView === item.view &&
                       pathname?.startsWith("/dashboard/files") &&
-                      "bg-sidebar-accent text-sidebar-accent-foreground"
+                      "bg-sidebar-foreground/10 font-medium"
                   )}
                 >
                   <Link
