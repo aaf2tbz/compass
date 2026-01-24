@@ -1,15 +1,22 @@
-/.idea/
-/*.iml
+# dependencies
+node_modules/
 
-/vendor/
-/vendor-bin/*/vendor/
+# next.js
+.next/
+out/
 
-/.php-cs-fixer.cache
-/tests/.phpunit.cache
+# cloudflare
+.wrangler/
+.dev.vars
 
-/node_modules/
-/js/
-/css/
-.claude
-.claude/
-CLAUDE.md
+# env
+.env
+.env.local
+.env.*.local
+
+# build
+dist/
+
+# misc
+.DS_Store
+*.tsbuildinfo
