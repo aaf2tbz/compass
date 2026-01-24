@@ -23,11 +23,13 @@ import {
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { NotificationsPopover } from "@/components/notifications-popover"
 import { useCommandMenu } from "@/components/command-menu-provider"
+import { useFeedback } from "@/components/feedback-widget"
 import { AccountModal } from "@/components/account-modal"
 
 export function SiteHeader() {
   const { theme, setTheme } = useTheme()
   const { open: openCommand } = useCommandMenu()
+  const { open: openFeedback } = useFeedback()
   const [accountOpen, setAccountOpen] = React.useState(false)
 
   return (
@@ -55,6 +57,14 @@ export function SiteHeader() {
       </div>
 
       <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground text-xs"
+          onClick={openFeedback}
+        >
+          Feedback
+        </Button>
         <NotificationsPopover />
         <Button
           variant="ghost"
@@ -62,11 +72,8 @@ export function SiteHeader() {
           className="size-8"
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
         >
-          {theme === "dark" ? (
-            <IconSun className="size-4" />
-          ) : (
-            <IconMoon className="size-4" />
-          )}
+          <IconSun className="size-4 hidden dark:block" />
+          <IconMoon className="size-4 block dark:hidden" />
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

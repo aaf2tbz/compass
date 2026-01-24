@@ -105,5 +105,22 @@ export type ScheduleBaseline = typeof scheduleBaselines.$inferSelect
 export type NewScheduleBaseline = typeof scheduleBaselines.$inferInsert
 export type Customer = typeof customers.$inferSelect
 export type NewCustomer = typeof customers.$inferInsert
+export const feedback = sqliteTable("feedback", {
+  id: text("id").primaryKey(),
+  type: text("type").notNull(),
+  message: text("message").notNull(),
+  name: text("name"),
+  email: text("email"),
+  pageUrl: text("page_url"),
+  userAgent: text("user_agent"),
+  viewportWidth: integer("viewport_width"),
+  viewportHeight: integer("viewport_height"),
+  ipHash: text("ip_hash"),
+  githubIssueUrl: text("github_issue_url"),
+  createdAt: text("created_at").notNull(),
+})
+
 export type Vendor = typeof vendors.$inferSelect
 export type NewVendor = typeof vendors.$inferInsert
+export type Feedback = typeof feedback.$inferSelect
+export type NewFeedback = typeof feedback.$inferInsert

@@ -1,6 +1,5 @@
 "use client"
 
-import { Toaster } from "sonner"
 import { FilesProvider } from "@/hooks/use-files"
 
 export default function FilesLayout({
@@ -11,7 +10,6 @@ export default function FilesLayout({
   return (
     <FilesProvider>
       {children}
-      <Toaster position="bottom-right" />
     </FilesProvider>
   )
 }

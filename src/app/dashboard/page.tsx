@@ -1,3 +1,4 @@
+import { FeedbackCallout } from "@/components/feedback-widget"
 import { Button } from "@/components/ui/button"
 import {
   IconBrandGithub,
@@ -93,6 +94,9 @@ export default async function Page() {
             Development preview — features may be incomplete
             or change without notice.
           </p>
+          <div className="mt-4">
+            <FeedbackCallout />
+          </div>
         </div>
 
         <div className="grid gap-10 lg:grid-cols-2">

@@ -43,8 +43,8 @@ export default async function SchedulePage({
       getSchedule(id),
       getBaselines(id),
     ])
-  } catch (e: any) {
-    if (e?.digest === "NEXT_NOT_FOUND") throw e
+  } catch (e: unknown) {
+    if (e && typeof e === "object" && "digest" in e && e.digest === "NEXT_NOT_FOUND") throw e
     console.warn("D1 unavailable in dev mode, using empty data")
   }
 
