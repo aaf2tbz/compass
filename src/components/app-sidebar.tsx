@@ -78,7 +78,7 @@ function SidebarNav({
   projects: { id: string; name: string }[]
 }) {
   const pathname = usePathname()
-  const { state } = useSidebar()
+  const { state, setOpen } = useSidebar()
   const { open: openSearch } = useCommandMenu()
   const { open: openSettings } = useSettings()
   const isExpanded = state === "expanded"
@@ -86,6 +86,13 @@ function SidebarNav({
   const isProjectMode = /^\/dashboard\/projects\/[^/]+/.test(
     pathname ?? ""
   )
+
+  React.useEffect(() => {
+    if ((isFilesMode || isProjectMode) && !isExpanded) {
+      setOpen(true)
+    }
+  }, [isFilesMode, isProjectMode, isExpanded, setOpen])
+
   const showContext = isExpanded && (isFilesMode || isProjectMode)
 
   const mode = showContext && isFilesMode

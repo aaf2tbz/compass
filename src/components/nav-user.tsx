@@ -57,12 +57,12 @@ export function NavUser({
                 <AvatarFallback className="rounded-lg">MV</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
-                <span className="text-muted-foreground truncate text-xs">
+                <span className="text-sidebar-foreground truncate font-medium">{user.name}</span>
+                <span className="text-sidebar-foreground/70 truncate text-xs">
                   {user.email}
                 </span>
               </div>
-              <IconDotsVertical className="ml-auto size-4" />
+              <IconDotsVertical className="text-sidebar-foreground/70 ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent

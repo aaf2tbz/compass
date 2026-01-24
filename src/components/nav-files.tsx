@@ -19,7 +19,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator,
 } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
 
@@ -84,8 +83,7 @@ export function NavFiles() {
           </SidebarMenu>
         </SidebarGroupContent>
       </SidebarGroup>
-      <div className="mt-auto">
-        <SidebarSeparator />
+      <div className="mt-auto px-3 pb-3">
         <StorageIndicator usage={mockStorageUsage} />
       </div>
     </>
