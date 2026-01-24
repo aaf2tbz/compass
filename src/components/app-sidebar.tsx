@@ -19,6 +19,7 @@ import { NavFiles } from "@/components/nav-files"
 import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { useCommandMenu } from "@/components/command-menu-provider"
+import { useSettings } from "@/components/settings-provider"
 import {
   Sidebar,
   SidebarContent,
@@ -80,6 +81,7 @@ function SidebarNav({
   const pathname = usePathname()
   const { state } = useSidebar()
   const { open: openSearch } = useCommandMenu()
+  const { open: openSettings } = useSettings()
   const isExpanded = state === "expanded"
   const isFilesMode = pathname?.startsWith("/dashboard/files")
   const isProjectMode = /^\/dashboard\/projects\/[^/]+/.test(
@@ -94,7 +96,11 @@ function SidebarNav({
       : "main"
 
   const secondaryItems = [
-    ...data.navSecondary,
+    ...data.navSecondary.map((item) =>
+      item.title === "Settings"
+        ? { ...item, onClick: openSettings }
+        : item
+    ),
     { title: "Search", icon: IconSearch, onClick: openSearch },
   ]
 

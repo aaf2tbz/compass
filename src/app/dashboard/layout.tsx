@@ -1,6 +1,7 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { CommandMenuProvider } from "@/components/command-menu-provider"
+import { SettingsProvider } from "@/components/settings-provider"
 import {
   SidebarInset,
   SidebarProvider,
@@ -15,6 +16,7 @@ export default async function DashboardLayout({
   const projectList = await getProjects()
 
   return (
+    <SettingsProvider>
     <CommandMenuProvider>
       <SidebarProvider
         defaultOpen={false}
@@ -36,5 +38,6 @@ export default async function DashboardLayout({
         </SidebarInset>
       </SidebarProvider>
     </CommandMenuProvider>
+    </SettingsProvider>
   )
 }
