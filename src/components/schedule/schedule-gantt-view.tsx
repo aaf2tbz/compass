@@ -22,6 +22,10 @@ import {
   IconChevronRight,
   IconChevronDown,
   IconUsers,
+  IconZoomIn,
+  IconZoomOut,
+  IconPointer,
+  IconHandGrab,
 } from "@tabler/icons-react"
 import { GanttChart } from "./gantt-chart"
 import { TaskFormDialog } from "./task-form-dialog"
@@ -64,6 +68,25 @@ export function ScheduleGanttView({
   const [editingTask, setEditingTask] = useState<ScheduleTaskData | null>(
     null
   )
+
+  const [panMode, setPanMode] = useState(false)
+
+  const defaultWidths: Record<ViewMode, number> = {
+    Day: 38, Week: 140, Month: 120,
+  }
+  const [columnWidth, setColumnWidth] = useState(defaultWidths[viewMode])
+
+  const handleZoom = useCallback((direction: "in" | "out") => {
+    setColumnWidth((prev) => {
+      const next = direction === "in" ? prev * 1.3 : prev / 1.3
+      return Math.round(Math.min(300, Math.max(20, next)))
+    })
+  }, [])
+
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode)
+    setColumnWidth(defaultWidths[mode])
+  }
 
   const filteredTasks = showCriticalPath
     ? tasks.filter((t) => t.isCriticalPath)
@@ -136,7 +159,7 @@ export function ScheduleGanttView({
               key={mode}
               size="sm"
               variant={viewMode === mode ? "default" : "outline"}
-              onClick={() => setViewMode(mode)}
+              onClick={() => handleViewModeChange(mode)}
             >
               {mode}
             </Button>
@@ -147,6 +170,33 @@ export function ScheduleGanttView({
             onClick={scrollToToday}
           >
             Today
+          </Button>
+          <Button
+            variant={panMode ? "default" : "outline"}
+            size="icon"
+            className="size-7"
+            onClick={() => setPanMode((p) => !p)}
+            title={panMode ? "Pan mode (click to switch to pointer)" : "Pointer mode (click to switch to pan)"}
+          >
+            {panMode
+              ? <IconHandGrab className="size-3.5" />
+              : <IconPointer className="size-3.5" />}
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="size-7"
+            onClick={() => handleZoom("out")}
+          >
+            <IconZoomOut className="size-3.5" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="size-7"
+            onClick={() => handleZoom("in")}
+          >
+            <IconZoomIn className="size-3.5" />
           </Button>
         </div>
         <div className="flex items-center gap-4">
@@ -299,11 +349,14 @@ export function ScheduleGanttView({
         <ResizableHandle withHandle />
 
         <ResizablePanel defaultSize={70} minSize={40}>
-          <div className="h-full overflow-auto p-2">
+          <div className="h-full overflow-hidden p-2">
             <GanttChart
               tasks={frappeTasks}
               viewMode={viewMode}
+              columnWidth={columnWidth}
+              panMode={panMode}
               onDateChange={handleDateChange}
+              onZoom={handleZoom}
             />
           </div>
         </ResizablePanel>

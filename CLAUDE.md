@@ -66,3 +66,13 @@ key bindings:
 - `ASSETS` - static asset serving
 - `IMAGES` - cloudflare image optimization
 - `WORKER_SELF_REFERENCE` - self-reference for caching
+
+known issues (WIP)
+---
+
+- gantt chart pan/zoom: zoom controls (+/-) and ctrl+scroll work. pan mode
+  toggle (pointer/grab) exists but vertical panning does not work correctly
+  yet - the scroll-based approach conflicts with how frappe-gantt sizes its
+  container. horizontal panning works. needs a different approach for
+  vertical navigation (possibly a custom viewport with transform-based
+  rendering for the body while keeping the header fixed separately).
