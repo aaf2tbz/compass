@@ -1,22 +1,22 @@
 "use client"
 
 import {
-  useState,
-  useCallback,
-  useRef,
-  useEffect,
+    useState,
+    useCallback,
+    useRef,
+    useEffect,
 } from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
-  ArrowUp,
-  Plus,
-  SendHorizonal,
-  Square,
-  Copy,
-  ThumbsUp,
-  ThumbsDown,
-  RefreshCw,
-  Check,
+    ArrowUp,
+    Plus,
+    SendHorizonal,
+    Square,
+    Copy,
+    ThumbsUp,
+    ThumbsDown,
+    RefreshCw,
+    Check,
 } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -24,49 +24,52 @@ import { MarkdownRenderer } from "@/components/ui/markdown-renderer"
 import { TypingIndicator } from "@/components/ui/typing-indicator"
 import { PromptSuggestions } from "@/components/ui/prompt-suggestions"
 import {
-  useAutosizeTextArea,
+    useAutosizeTextArea,
 } from "@/hooks/use-autosize-textarea"
+import { useChat } from "@ai-sdk/react"
+import { DefaultChatTransport } from "ai"
 import {
-  useElizaChat,
-  executeAction,
-  type AgentAction,
-} from "@/lib/eliza/chat-adapter"
+    dispatchToolActions,
+    initializeActionHandlers,
+    unregisterActionHandler,
+    ALL_HANDLER_TYPES,
+} from "@/lib/agent/chat-adapter"
 import {
-  IconBrandGithub,
-  IconExternalLink,
-  IconGitFork,
-  IconStar,
-  IconAlertCircle,
-  IconEye,
+    IconBrandGithub,
+    IconExternalLink,
+    IconGitFork,
+    IconStar,
+    IconAlertCircle,
+    IconEye,
 } from "@tabler/icons-react"
 
 type RepoStats = {
-  readonly stargazers_count: number
-  readonly forks_count: number
-  readonly open_issues_count: number
-  readonly subscribers_count: number
+    readonly stargazers_count: number
+    readonly forks_count: number
+    readonly open_issues_count: number
+    readonly subscribers_count: number
 }
 
 const REPO = "High-Performance-Structures/compass"
 const GITHUB_URL = `https://github.com/${REPO}`
 
 interface DashboardChatProps {
-  readonly stats: RepoStats | null
+    readonly stats: RepoStats | null
 }
 
 const SUGGESTIONS = [
-  "What can you help me with?",
-  "Show me today's tasks",
-  "Navigate to customers",
+    "What can you help me with?",
+    "Show me today's tasks",
+    "Navigate to customers",
 ]
 
 const ANIMATED_PLACEHOLDERS = [
-  "Show me invoices from the Johnson project",
-  "What tasks are due this week?",
-  "Which vendors need payment?",
-  "Navigate to the schedule view",
-  "Find overdue invoices for Highland",
-  "Who is assigned to concrete pour?",
+    "Show me open invoices",
+    "What's on the schedule for next week?",
+    "Which subcontractors are waiting on payment?",
+    "Pull up the current project timeline",
+    "Find outstanding invoices over 30 days",
+    "Who's assigned to the foundation work?",
 ]
 
 const LOGO_MASK = {
@@ -78,10 +81,25 @@ const LOGO_MASK = {
   WebkitMaskRepeat: "no-repeat",
 } as React.CSSProperties
 
+function getTextFromParts(
+  parts: ReadonlyArray<{ type: string; text?: string }>
+): string {
+  return parts
+    .filter(
+      (p): p is { type: "text"; text: string } =>
+        p.type === "text"
+    )
+    .map((p) => p.text)
+    .join("")
+}
+
 export function DashboardChat({ stats }: DashboardChatProps) {
   const [isActive, setIsActive] = useState(false)
   const [idleInput, setIdleInput] = useState("")
   const scrollRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
+  const routerRef = useRef(router)
+  routerRef.current = router
   const pathname = usePathname()
   const [chatInput, setChatInput] = useState("")
   const chatTextareaRef = useRef<HTMLTextAreaElement>(null)
@@ -93,24 +111,71 @@ export function DashboardChat({ stats }: DashboardChatProps) {
     dependencies: [chatInput],
   })
 
-  const onAction = useCallback((action: AgentAction) => {
-    executeAction(action)
-  }, [])
-
-  const onError = useCallback((error: Error) => {
-    toast.error(error.message)
-  }, [])
-
   const {
     messages,
-    isGenerating,
+    sendMessage,
+    regenerate,
     stop,
-    append,
-  } = useElizaChat({
-    context: { view: pathname },
-    onAction,
-    onError,
+    status,
+  } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/agent",
+      headers: { "x-current-page": pathname },
+    }),
+    onError: (err) => {
+      toast.error(err.message)
+    },
   })
+
+  const isGenerating =
+    status === "streaming" || status === "submitted"
+
+  // initialize action handlers for navigation, toasts, etc
+  useEffect(() => {
+    initializeActionHandlers(() => routerRef.current)
+
+    const handleToast = (event: CustomEvent) => {
+      const { message, type = "default" } =
+        event.detail ?? {}
+      if (message) {
+        if (type === "success") toast.success(message)
+        else if (type === "error") toast.error(message)
+        else toast(message)
+      }
+    }
+
+    window.addEventListener(
+      "agent-toast",
+      handleToast as EventListener
+    )
+
+    return () => {
+      window.removeEventListener(
+        "agent-toast",
+        handleToast as EventListener
+      )
+      for (const type of ALL_HANDLER_TYPES) {
+        unregisterActionHandler(type)
+      }
+    }
+  }, [])
+
+  // dispatch tool actions when messages update
+  useEffect(() => {
+    const last = messages.at(-1)
+    if (last?.role !== "assistant") return
+
+    const parts = last.parts as ReadonlyArray<{
+      type: string
+      toolInvocation?: {
+        toolName: string
+        state: string
+        result?: unknown
+      }
+    }>
+
+    dispatchToolActions(parts)
+  }, [messages])
 
   const [copiedId, setCopiedId] = useState<string | null>(
     null
@@ -154,7 +219,6 @@ export function DashboardChat({ stats }: DashboardChatProps) {
         setAnimFading(true)
         animTimerRef.current = setTimeout(tick, 400)
       } else {
-        // faded out — swap to next message while invisible
         msgIdx =
           (msgIdx + 1) % ANIMATED_PLACEHOLDERS.length
         charIdx = 1
@@ -175,14 +239,92 @@ export function DashboardChat({ stats }: DashboardChatProps) {
     }
   }, [isIdleFocused, idleInput, isActive])
 
-  // auto-scroll on new messages
+  // auto-scroll state
+  const autoScrollRef = useRef(true)
+  const justSentRef = useRef(false)
+  const pinCooldownRef = useRef(false)
+  const prevLenRef = useRef(0)
+
+  // called imperatively from send handlers to flag
+  // that the next render should do the pin-scroll
+  const markSent = useCallback(() => {
+    justSentRef.current = true
+    autoScrollRef.current = true
+  }, [])
+
+  // runs after every render caused by message changes.
+  // the DOM is guaranteed to be up-to-date here.
   useEffect(() => {
     if (!isActive) return
     const el = scrollRef.current
     if (!el) return
-    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" })
-  }, [messages.length, isActive])
 
+    // pin-scroll: fires once right after user sends
+    if (justSentRef.current) {
+      justSentRef.current = false
+
+      const bubbles = el.querySelectorAll(
+        "[data-role='user']"
+      )
+      const last = bubbles[
+        bubbles.length - 1
+      ] as HTMLElement | undefined
+
+      if (last) {
+        const cRect = el.getBoundingClientRect()
+        const bRect = last.getBoundingClientRect()
+        const topInContainer = bRect.top - cRect.top
+
+        if (topInContainer > cRect.height / 2) {
+          const absTop =
+            bRect.top - cRect.top + el.scrollTop
+          const target = absTop - bRect.height * 0.25
+
+          el.scrollTo({
+            top: Math.max(0, target),
+            behavior: "smooth",
+          })
+
+          // don't let follow-bottom fight the smooth
+          // scroll for the next 600ms
+          pinCooldownRef.current = true
+          setTimeout(() => {
+            pinCooldownRef.current = false
+          }, 600)
+          return
+        }
+      }
+    }
+
+    // follow-bottom: keep the latest content visible
+    if (!autoScrollRef.current || pinCooldownRef.current)
+      return
+
+    const gap =
+      el.scrollHeight - el.scrollTop - el.clientHeight
+    if (gap > 0) {
+      el.scrollTop = el.scrollHeight - el.clientHeight
+    }
+  }, [messages, isActive])
+
+  // user scroll detection
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+
+    const onScroll = () => {
+      const gap =
+        el.scrollHeight - el.scrollTop - el.clientHeight
+      if (gap > 100) autoScrollRef.current = false
+      if (gap < 20) autoScrollRef.current = true
+    }
+
+    el.addEventListener("scroll", onScroll, {
+      passive: true,
+    })
+    return () =>
+      el.removeEventListener("scroll", onScroll)
+  }, [isActive, messages.length])
   // Escape to return to idle when no messages
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -212,11 +354,11 @@ export function DashboardChat({ stats }: DashboardChatProps) {
       const value = idleInput.trim()
       setIsActive(true)
       if (value) {
-        append({ role: "user", content: value })
+        sendMessage({ text: value })
         setIdleInput("")
       }
     },
-    [idleInput, append]
+    [idleInput, sendMessage]
   )
 
   const handleCopy = useCallback(
@@ -231,9 +373,9 @@ export function DashboardChat({ stats }: DashboardChatProps) {
   const handleSuggestion = useCallback(
     (message: { role: "user"; content: string }) => {
       setIsActive(true)
-      append(message)
+      sendMessage({ text: message.content })
     },
-    [append]
+    [sendMessage]
   )
 
   return (
@@ -371,14 +513,22 @@ export function DashboardChat({ stats }: DashboardChatProps) {
             >
               <div className="mx-auto w-full max-w-3xl px-4 py-4 space-y-6">
                 {messages.map((msg) => {
+                  const textContent = getTextFromParts(
+                    msg.parts as ReadonlyArray<{
+                      type: string
+                      text?: string
+                    }>
+                  )
+
                   if (msg.role === "user") {
                     return (
                       <div
                         key={msg.id}
+                        data-role="user"
                         className="flex justify-end"
                       >
                         <div className="rounded-2xl border bg-background px-4 py-2.5 text-sm max-w-[80%] shadow-sm">
-                          {msg.content}
+                          {textContent}
                         </div>
                       </div>
                     )
@@ -388,11 +538,11 @@ export function DashboardChat({ stats }: DashboardChatProps) {
                       key={msg.id}
                       className="flex flex-col items-start"
                     >
-                      {msg.content ? (
+                      {textContent ? (
                         <>
-                          <div className="w-full text-sm leading-relaxed prose prose-sm prose-neutral dark:prose-invert max-w-none">
+                          <div className="w-full text-sm leading-[1.6] prose prose-sm prose-neutral dark:prose-invert max-w-none [&_h1]:text-lg [&_h2]:text-base [&_h3]:text-[15px] [&_p]:my-2.5 [&_ul]:my-2.5 [&_ol]:my-2.5 [&_li]:my-1">
                             <MarkdownRenderer>
-                              {msg.content}
+                              {textContent}
                             </MarkdownRenderer>
                           </div>
                           <div className="mt-2 flex items-center gap-1">
@@ -401,7 +551,7 @@ export function DashboardChat({ stats }: DashboardChatProps) {
                               onClick={() =>
                                 handleCopy(
                                   msg.id,
-                                  msg.content
+                                  textContent
                                 )
                               }
                               className="rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
@@ -429,16 +579,7 @@ export function DashboardChat({ stats }: DashboardChatProps) {
                             </button>
                             <button
                               type="button"
-                              onClick={() =>
-                                append({
-                                  role: "user",
-                                  content:
-                                    messages.findLast(
-                                      (m) =>
-                                        m.role === "user"
-                                    )?.content ?? "",
-                                })
-                              }
+                              onClick={() => regenerate()}
                               className="rounded-md p-1.5 text-muted-foreground/60 transition-colors hover:bg-muted hover:text-foreground"
                               aria-label="Regenerate"
                             >
@@ -483,8 +624,9 @@ export function DashboardChat({ stats }: DashboardChatProps) {
             e.preventDefault()
             const trimmed = chatInput.trim()
             if (!trimmed || isGenerating) return
-            append({ role: "user", content: trimmed })
+            sendMessage({ text: trimmed })
             setChatInput("")
+            markSent()
           }}
         >
           <div
@@ -503,11 +645,11 @@ export function DashboardChat({ stats }: DashboardChatProps) {
                   e.preventDefault()
                   const trimmed = chatInput.trim()
                   if (!trimmed || isGenerating) return
-                  append({
-                    role: "user",
-                    content: trimmed,
+                  sendMessage({
+                    text: trimmed,
                   })
                   setChatInput("")
+                  markSent()
                 }
               }}
               placeholder="Ask follow-up..."
