@@ -25,6 +25,8 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { NetSuiteConnectionStatus } from "@/components/netsuite/connection-status"
 import { SyncControls } from "@/components/netsuite/sync-controls"
+import { MemoriesTable } from "@/components/agent/memories-table"
+import { SkillsTab } from "@/components/settings/skills-tab"
 
 export function SettingsModal({
   open,
@@ -152,6 +154,10 @@ export function SettingsModal({
     </>
   )
 
+  const slabMemoryPage = <MemoriesTable />
+
+  const skillsPage = <SkillsTab />
+
   return (
     <ResponsiveDialog
       open={open}
@@ -161,7 +167,7 @@ export function SettingsModal({
       className="sm:max-w-xl"
     >
       <ResponsiveDialogBody
-        pages={[generalPage, notificationsPage, appearancePage, integrationsPage]}
+        pages={[generalPage, notificationsPage, appearancePage, integrationsPage, slabMemoryPage, skillsPage]}
       >
         <Tabs defaultValue="general" className="w-full">
           <TabsList className="w-full inline-flex justify-start overflow-x-auto">
@@ -176,6 +182,12 @@ export function SettingsModal({
             </TabsTrigger>
             <TabsTrigger value="integrations" className="text-xs sm:text-sm shrink-0">
               Integrations
+            </TabsTrigger>
+            <TabsTrigger value="slab-memory" className="text-xs sm:text-sm shrink-0">
+              Slab Memory
+            </TabsTrigger>
+            <TabsTrigger value="skills" className="text-xs sm:text-sm shrink-0">
+              Skills
             </TabsTrigger>
           </TabsList>
 
@@ -293,6 +305,20 @@ export function SettingsModal({
           >
             <NetSuiteConnectionStatus />
             <SyncControls />
+          </TabsContent>
+
+          <TabsContent
+            value="slab-memory"
+            className="space-y-3 pt-3"
+          >
+            <MemoriesTable />
+          </TabsContent>
+
+          <TabsContent
+            value="skills"
+            className="space-y-3 pt-3"
+          >
+            <SkillsTab />
           </TabsContent>
         </Tabs>
       </ResponsiveDialogBody>

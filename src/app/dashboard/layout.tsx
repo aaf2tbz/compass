@@ -9,8 +9,9 @@ import { FeedbackWidget } from "@/components/feedback-widget"
 import { PageActionsProvider } from "@/components/page-actions-provider"
 import { DashboardContextMenu } from "@/components/dashboard-context-menu"
 import { Toaster } from "@/components/ui/sonner"
-import { ChatPanel } from "@/components/agent/chat-panel"
-import { AgentProvider } from "@/components/agent/agent-provider"
+import { ChatPanelShell } from "@/components/agent/chat-panel-shell"
+import { MainContent } from "@/components/agent/main-content"
+import { ChatProvider } from "@/components/agent/chat-provider"
 import {
   SidebarInset,
   SidebarProvider,
@@ -32,7 +33,7 @@ export default async function DashboardLayout({
 
   return (
     <SettingsProvider>
-    <AgentProvider>
+    <ChatProvider>
     <ProjectListProvider projects={projectList}>
     <PageActionsProvider>
     <CommandMenuProvider>
@@ -51,13 +52,11 @@ export default async function DashboardLayout({
             <SiteHeader user={user} />
             <div className="flex min-h-0 flex-1 overflow-hidden">
               <DashboardContextMenu>
-              <div className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden pb-14 md:pb-0 min-w-0">
-                <div className="@container/main flex flex-1 flex-col min-w-0">
+                <MainContent>
                   {children}
-                </div>
-              </div>
+                </MainContent>
               </DashboardContextMenu>
-              <ChatPanel />
+              <ChatPanelShell />
             </div>
           </SidebarInset>
         </FeedbackWidget>
@@ -70,7 +69,7 @@ export default async function DashboardLayout({
     </CommandMenuProvider>
     </PageActionsProvider>
     </ProjectListProvider>
-    </AgentProvider>
+    </ChatProvider>
     </SettingsProvider>
   )
 }

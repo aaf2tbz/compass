@@ -1,6 +1,18 @@
 "use client"
 
-export { useChat } from "@ai-sdk/react"
+// --- Shared utilities ---
+
+export function getTextFromParts(
+  parts: ReadonlyArray<{ type: string; text?: string }>
+): string {
+  return parts
+    .filter(
+      (p): p is { type: "text"; text: string } =>
+        p.type === "text"
+    )
+    .map((p) => p.text)
+    .join("")
+}
 
 // --- Action handler registry ---
 
@@ -42,11 +54,25 @@ export async function executeAction(
 }
 
 export function initializeActionHandlers(
-  getRouter: () => { push: (path: string) => void }
+  getRouter: () => { push: (path: string) => void },
+  openPanel?: () => void
 ): void {
   registerActionHandler("NAVIGATE_TO", (payload) => {
     if (payload?.path && typeof payload.path === "string") {
-      getRouter().push(payload.path)
+      const navigate = () => {
+        getRouter().push(payload.path as string)
+        openPanel?.()
+      }
+
+      const doc = document as Document & {
+        startViewTransition?: (cb: () => void) => void
+      }
+
+      if (doc.startViewTransition) {
+        doc.startViewTransition(navigate)
+      } else {
+        navigate()
+      }
     }
   })
 
@@ -97,6 +123,16 @@ export function initializeActionHandlers(
       el?.focus()
     }
   })
+
+  registerActionHandler("GENERATE_UI", (payload) => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("agent-generate-ui", {
+          detail: payload,
+        })
+      )
+    }
+  })
 }
 
 export const ALL_HANDLER_TYPES = [
@@ -106,49 +142,66 @@ export const ALL_HANDLER_TYPES = [
   "CLOSE_MODAL",
   "SCROLL_TO",
   "FOCUS_ELEMENT",
+  "GENERATE_UI",
 ] as const
 
 /**
  * Interpret tool result parts from AI SDK messages
  * as client-side actions and dispatch them.
+ * Pass a `dispatched` set to avoid re-firing on re-renders.
+ *
+ * AI SDK v6 part formats:
+ *   Static:  type "tool-<name>", state/output flat
+ *   Dynamic: type "dynamic-tool", toolName field, same
  */
 export function dispatchToolActions(
-  parts: ReadonlyArray<{
-    type: string
-    toolInvocation?: {
-      toolName: string
-      state: string
-      result?: unknown
-    }
-  }>
+  parts: ReadonlyArray<Record<string, unknown>>,
+  dispatched?: Set<string>
 ): void {
   for (const part of parts) {
-    if (
-      part.type !== "tool-invocation" ||
-      part.toolInvocation?.state !== "result"
-    ) {
-      continue
-    }
+    const pType = part.type as string | undefined
+    const isToolPart =
+      typeof pType === "string" &&
+      (pType.startsWith("tool-") ||
+        pType === "dynamic-tool")
+    if (!isToolPart) continue
 
-    const result = part.toolInvocation.result as
+    const state = part.state as string | undefined
+    if (state !== "output-available") continue
+
+    const callId = part.toolCallId as string | undefined
+    if (callId && dispatched?.has(callId)) continue
+
+    const output = part.output as
       | Record<string, unknown>
       | undefined
 
-    if (!result?.action) continue
+    if (!output?.action) continue
 
-    switch (result.action) {
+    if (callId) dispatched?.add(callId)
+
+    switch (output.action) {
       case "navigate":
         executeAction({
           type: "NAVIGATE_TO",
-          payload: { path: result.path },
+          payload: { path: output.path },
         })
         break
       case "toast":
         executeAction({
           type: "SHOW_TOAST",
           payload: {
-            message: result.message,
-            type: result.type,
+            message: output.message,
+            type: output.type,
+          },
+        })
+        break
+      case "generateUI":
+        executeAction({
+          type: "GENERATE_UI",
+          payload: {
+            renderPrompt: output.renderPrompt,
+            dataContext: output.dataContext,
           },
         })
         break
