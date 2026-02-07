@@ -4,6 +4,7 @@ import * as netsuiteSchema from "./schema-netsuite"
 import * as pluginSchema from "./schema-plugins"
 import * as agentSchema from "./schema-agent"
 import * as aiConfigSchema from "./schema-ai-config"
+import * as themeSchema from "./schema-theme"
 import * as googleSchema from "./schema-google"
 
 const allSchemas = {
@@ -12,6 +13,7 @@ const allSchemas = {
   ...pluginSchema,
   ...agentSchema,
   ...aiConfigSchema,
+  ...themeSchema,
   ...googleSchema,
 }
 
