@@ -137,7 +137,7 @@ export async function connectGoogleDrive(
       .insert(googleAuth)
       .values({
         id: crypto.randomUUID(),
-        organizationId: "default",
+        organizationId: "org-1",
         serviceAccountKeyEncrypted: encryptedKey,
         workspaceDomain,
         connectedBy: user.id,
