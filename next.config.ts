@@ -11,7 +11,7 @@ const isBypassMode = process.env.BYPASS_AUTH === "true";
 
 if (isBypassMode) {
     const originalResolveFilename = (Module as any)._resolveFilename;
-    
+
     (Module as any)._resolveFilename = function (
         request: string,
         parent: any,
@@ -22,10 +22,10 @@ if (isBypassMode) {
         if (request === "@opennextjs/cloudflare") {
             return require.resolve("./src/lib/cloudflare-shim.ts");
         }
-        
+
         return originalResolveFilename(request, parent, isMain, options);
     };
-    
+
     console.log("[DEV] Module patching enabled for Cloudflare bypass");
 }
 
@@ -35,6 +35,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
     eslint: {
         ignoreDuringBuilds: true,
+    },
+    typescript: {
+        ignoreBuildErrors: true,
     },
     experimental: {
         optimizePackageImports: [

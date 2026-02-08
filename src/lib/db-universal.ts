@@ -34,21 +34,21 @@ const isLocalDev = process.env.BYPASS_AUTH === "true" && process.env.NODE_ENV ==
 const isBun = typeof process !== "undefined" && process.versions && process.versions.bun !== undefined
 
 // Local database instance
-let localDb: unknown | null = null
-let sqliteDb: unknown | null = null
+let localDb: any | null = null
+let sqliteDb: any | null = null
 
 /**
  * Initialize local SQLite database using Bun or better-sqlite3
  */
 async function initLocalDb(): Promise<unknown> {
   if (sqliteDb) return sqliteDb
-  
+
   const DB_PATH = path.join(process.cwd(), ".local", "dev.db")
-  
+
   if (!fs.existsSync(path.dirname(DB_PATH))) {
     fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })
   }
-  
+
   if (isBun) {
     // Use Bun's native SQLite
     const { Database } = await import("bun:sqlite")
@@ -64,7 +64,7 @@ async function initLocalDb(): Promise<unknown> {
     db.exec("PRAGMA foreign_keys = ON")
     sqliteDb = db
   }
-  
+
   return sqliteDb
 }
 
@@ -86,7 +86,7 @@ export async function getDb() {
     }
     return localDb
   }
-  
+
   // Use Cloudflare D1
   const { getCloudflareContext } = await import("@opennextjs/cloudflare")
   const { env } = await getCloudflareContext()
