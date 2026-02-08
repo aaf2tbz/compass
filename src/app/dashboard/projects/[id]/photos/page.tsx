@@ -2,8 +2,6 @@
 
 import { useParams, useSearchParams } from "next/navigation"
 import { PhotoGallery } from "@/components/projects/photo-gallery"
-import { Button } from "@/components/ui/button"
-import { CameraIcon } from "lucide-react"
 
 export default function ProjectPhotosPage() {
     const params = useParams()

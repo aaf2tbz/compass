@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache"
 import { getDb } from "@/lib/db-universal"
 import { dailyLogs, projectAssets } from "@/db/schema"
 import { googleAuth } from "@/db/schema-google"
-import { getCurrentUser, requireAuth } from "@/lib/auth"
+import { requireAuth } from "@/lib/auth"
 import { requirePermission } from "@/lib/permissions"
 import { decrypt } from "@/lib/crypto"
 import {

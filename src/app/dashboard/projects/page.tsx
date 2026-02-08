@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic"
 
 import { getDb } from "@/lib/db-universal"
 import { projects } from "@/db/schema"
-import { asc, desc } from "drizzle-orm"
+import { desc } from "drizzle-orm"
 import { IconFolder, IconPlus } from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import { CreateProjectDialog } from "@/components/projects/create-project-dialog"
@@ -17,6 +17,7 @@ import {
 import Link from "next/link"
 
 export default async function ProjectsPage() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let allProjects: any[] = []
 
   try {

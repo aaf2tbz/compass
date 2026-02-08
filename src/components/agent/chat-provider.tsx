@@ -6,8 +6,6 @@ import { useUIStream, type Spec } from "@json-render/react"
 import { usePathname, useRouter } from "next/navigation"
 import {
   saveConversation,
-  loadConversation,
-  loadConversations,
 } from "@/app/actions/agent"
 import { getTextFromParts } from "@/lib/agent/chat-adapter"
 import { useCompassChat } from "@/hooks/use-compass-chat"
@@ -309,6 +307,7 @@ export function ChatProvider({
         typeof part !== "object" ||
         part === null ||
         !("type" in part) ||
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (part as any).type !== "tool-invocation" ||
         !("toolInvocation" in part)
       ) {
