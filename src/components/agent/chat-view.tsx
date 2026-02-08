@@ -480,11 +480,11 @@ function ChatInput({
               <PromptInputButton
                 onClick={onToggle}
                 aria-label="Toggle chat"
-                className="h-10 w-10 rounded-full bg-teal-500 hover:bg-teal-600 text-white border-0 shadow-md group relative"
+                className="h-10 w-10 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground border-0 shadow-md group relative"
               >
                 {/* Compass Logo */}
                 <span
-                  className="absolute inset-0 m-auto size-5 bg-white transition-all duration-[700ms] ease-in-out group-hover:rotate-180 group-hover:opacity-0"
+                  className="absolute inset-0 m-auto size-5 bg-primary-foreground transition-all duration-[700ms] ease-in-out group-hover:rotate-180 group-hover:opacity-0"
                   style={{
                     maskImage: "url(/logo-black.png)",
                     maskSize: "contain",
@@ -499,7 +499,7 @@ function ChatInput({
                   }}
                 />
                 {/* Back Arrow - appears on hover, rotates in */}
-                <IconArrowLeft className="text-white absolute inset-0 m-auto size-5 transition-all duration-[700ms] ease-in-out -rotate-180 opacity-0 group-hover:rotate-0 group-hover:opacity-100" />
+                <IconArrowLeft className="text-primary-foreground absolute inset-0 m-auto size-5 transition-all duration-[700ms] ease-in-out -rotate-180 opacity-0 group-hover:rotate-0 group-hover:opacity-100" />
               </PromptInputButton>
             )}
             {onNewChat && (

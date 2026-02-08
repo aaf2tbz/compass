@@ -212,14 +212,14 @@ export function ChatPanelShell() {
         <button
           onClick={toggle}
           className={cn(
-            "fixed z-50 flex items-center justify-center rounded-full bg-teal-500 text-white shadow-lg transition-all duration-200 hover:scale-105 active:scale-95",
+            "fixed z-50 flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all duration-200 hover:scale-105 active:scale-95",
             "bottom-20 right-4 md:bottom-8 md:right-8",
             "h-14 w-14 md:h-auto md:w-auto md:px-4 md:py-3"
           )}
           aria-label="Open chat"
         >
           <span
-            className="block bg-white md:mr-2"
+            className="block bg-primary-foreground md:mr-2"
             style={{
               maskImage: "url(/logo-black.png)",
               maskSize: "contain",

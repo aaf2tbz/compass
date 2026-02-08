@@ -22,7 +22,6 @@ import { NavDashboards } from "@/components/nav-dashboards"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavFiles } from "@/components/nav-files"
 import { NavProjects } from "@/components/nav-projects"
-import { NavUser } from "@/components/nav-user"
 import { useCommandMenu } from "@/components/command-menu-provider"
 import { useSettings } from "@/components/settings-provider"
 import { useAgentOptional } from "@/components/agent/chat-provider"
@@ -87,11 +86,6 @@ const data = {
       url: "#",
       icon: IconSettings,
     },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
   ],
 }
 
@@ -137,7 +131,6 @@ function SidebarNav({
         ? { ...item, onClick: openSettings }
         : item
     ),
-    ...(agent ? [{ title: "Assistant", icon: IconMessageCircle, onClick: agent.open }] : []),
     { title: "Search", icon: IconSearch, onClick: openSearch },
   ]
 
@@ -179,9 +172,6 @@ export function AppSidebar({
           dashboards={dashboards}
         />
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={user} />
-      </SidebarFooter>
     </Sidebar>
   )
 }

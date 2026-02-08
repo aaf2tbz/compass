@@ -10,6 +10,7 @@ import {
   IconMessageCircle,
   IconSun,
   IconUserCircle,
+  IconSettings,
 } from "@tabler/icons-react"
 
 import { cn } from "@/lib/utils"
@@ -30,6 +31,7 @@ import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
 import { NotificationsPopover } from "@/components/notifications-popover"
 import { useCommandMenu } from "@/components/command-menu-provider"
 import { useFeedback } from "@/components/feedback-widget"
+import { useSettings } from "@/components/settings-provider"
 import { AccountModal } from "@/components/account-modal"
 import { getInitials } from "@/lib/utils"
 import type { SidebarUser } from "@/lib/auth"
@@ -66,6 +68,53 @@ function ThemeToggle() {
   )
 }
 
+function UserDropdown({
+  user,
+  initials,
+  onAccountOpen,
+  onSettingsOpen,
+  onLogout,
+}: {
+  user: SidebarUser | null
+  initials: string
+  onAccountOpen: () => void
+  onSettingsOpen: () => void
+  onLogout: () => void
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="ml-0.5 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <Avatar className="size-6">
+            {user?.avatar && <AvatarImage src={user.avatar} alt={user.name} />}
+            <AvatarFallback className="text-[10px] bg-gradient-to-br from-primary to-accent text-primary-foreground font-bold tracking-tight shadow-sm">{initials}</AvatarFallback>
+          </Avatar>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuLabel className="font-normal">
+          <p className="text-sm font-medium">{user?.name ?? "User"}</p>
+          <p className="text-muted-foreground text-xs">{user?.email ?? ""}</p>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={onAccountOpen}>
+          <IconUserCircle className="size-4 mr-2" />
+          Account
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={onSettingsOpen}>
+          <IconSettings className="size-4 mr-2" />
+          Settings
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={onLogout}>
+          <IconLogout className="size-4 mr-2" />
+          Log out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 export function SiteHeader({
   user,
 }: {
@@ -76,6 +125,7 @@ export function SiteHeader({
   const [headerQuery, setHeaderQuery] = React.useState("")
   const searchInputRef = React.useRef<HTMLInputElement>(null)
   const { open: openFeedback } = useFeedback()
+  const { open: openSettings } = useSettings()
   const [accountOpen, setAccountOpen] = React.useState(false)
   const { toggleSidebar } = useSidebar()
 
@@ -115,14 +165,13 @@ export function SiteHeader({
         <div className="flex items-center gap-1">
           <ThemeToggle />
           <NotificationsPopover />
-          <button
-            onClick={openFeedback}
-            className="flex h-8 items-center gap-1.5 rounded-full bg-primary px-3 text-primary-foreground text-xs font-medium shadow-sm hover:bg-primary/90 active:scale-95 transition-all"
-            aria-label="Send feedback"
-          >
-            <IconMessageCircle className="size-3.5" />
-            Feedback
-          </button>
+          <UserDropdown
+            user={user}
+            initials={initials}
+            onAccountOpen={() => setAccountOpen(true)}
+            onSettingsOpen={openSettings}
+            onLogout={handleLogout}
+          />
         </div>
       </div>
 
@@ -173,32 +222,13 @@ export function SiteHeader({
             Feedback
           </button>
           <ThemeToggle />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="ml-0.5 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                <Avatar className="size-6 grayscale">
-                  {user?.avatar && <AvatarImage src={user.avatar} alt={user.name} />}
-                  <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
-                </Avatar>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuLabel className="font-normal">
-                <p className="text-sm font-medium">{user?.name ?? "User"}</p>
-                <p className="text-muted-foreground text-xs">{user?.email ?? ""}</p>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => setAccountOpen(true)}>
-                <IconUserCircle />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={handleLogout}>
-                <IconLogout />
-                Log out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <UserDropdown
+            user={user}
+            initials={initials}
+            onAccountOpen={() => setAccountOpen(true)}
+            onSettingsOpen={openSettings}
+            onLogout={handleLogout}
+          />
         </div>
       </div>
 
