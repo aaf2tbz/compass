@@ -43,38 +43,26 @@ function ThemeToggle() {
   }, [])
 
   if (!mounted) {
-    return <div className="size-7" /> // placeholder
+    return <div className="size-9" /> // placeholder
   }
 
   const isDark = theme === "dark"
 
   return (
-    <div
+    <Button
+      variant="ghost"
+      size="icon"
+      className="size-9 rounded-full"
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className={cn(
-        "flex h-7 w-12 cursor-pointer items-center rounded-full border border-border/50 bg-muted/50 p-1 transition-colors hover:bg-muted/70",
-        isDark ? "justify-end" : "justify-start"
-      )}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault()
-          setTheme(isDark ? "light" : "dark")
-        }
-      }}
-      aria-label="Toggle theme"
+      title={`Switch to ${isDark ? "light" : "dark"} mode`}
     >
-      <div
-        className="flex size-5 items-center justify-center rounded-full bg-background shadow-sm ring-0 transition-transform"
-      >
-        {isDark ? (
-          <IconMoon className="size-3 text-foreground" />
-        ) : (
-          <IconSun className="size-3 text-foreground" />
-        )}
-      </div>
-    </div>
+      {isDark ? (
+        <IconMoon className="size-4" />
+      ) : (
+        <IconSun className="size-4" />
+      )}
+      <span className="sr-only">Toggle theme</span>
+    </Button>
   )
 }
 
