@@ -297,6 +297,54 @@ export function ChatProvider({
     triggerRender(result.renderPrompt, result.dataContext)
   }, [chat.messages, triggerRender])
 
+  // watch for request_photo tool results
+  const requestPhotoDispatchedRef = React.useRef(new Set<string>())
+
+  React.useEffect(() => {
+    const lastMsg = chat.messages.at(-1)
+    if (!lastMsg || lastMsg.role !== "assistant") return
+
+    for (const part of lastMsg.parts) {
+      if (
+        typeof part !== "object" ||
+        part === null ||
+        !("type" in part) ||
+        (part as any).type !== "tool-invocation" ||
+        !("toolInvocation" in part)
+      ) {
+        // Check for UIMessage part format which works differently in some AI SDK versions
+        // But our findGenerateUIOutput check handled generic objects.
+        // Let's rely on the structure we know. 
+        // findGenerateUIOutput used: type starts with "tool-" and state="output-available"
+        // Let's match that.
+        const p = part as Record<string, unknown>
+        const pType = p.type as string | undefined
+        const isToolPart =
+          typeof pType === "string" &&
+          (pType.startsWith("tool-") || pType === "dynamic-tool")
+
+        if (!isToolPart) continue
+
+        const state = p.state as string | undefined
+        if (state !== "output-available") continue
+
+        const callId = p.toolCallId as string | undefined
+        if (!callId || requestPhotoDispatchedRef.current.has(callId)) continue
+
+        const output = p.output as Record<string, unknown> | undefined
+        if (output?.action === "request_photo") {
+          requestPhotoDispatchedRef.current.add(callId)
+          window.dispatchEvent(new CustomEvent("agent-request-photo", {
+            detail: {
+              projectId: output.projectId,
+              context: output.context
+            }
+          }))
+        }
+      }
+    }
+  }, [chat.messages])
+
   // listen for save-dashboard events from tool dispatch
   React.useEffect(() => {
     const handler = async (e: Event) => {

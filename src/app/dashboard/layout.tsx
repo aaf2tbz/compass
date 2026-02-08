@@ -24,6 +24,7 @@ import { BiometricGuard } from "@/components/native/biometric-guard"
 import { OfflineBanner } from "@/components/native/offline-banner"
 import { NativeShell } from "@/components/native/native-shell"
 import { PushNotificationRegistrar } from "@/hooks/use-native-push"
+import { PhotoCaptureModal } from "@/components/projects/photo-capture-modal"
 
 export default async function DashboardLayout({
   children,
@@ -79,6 +80,7 @@ export default async function DashboardLayout({
                     Pre-alpha build
                   </p>
                   <Toaster position="bottom-right" />
+                  <PhotoCaptureModal />
                 </SidebarProvider>
               </BiometricGuard>
             </CommandMenuProvider>

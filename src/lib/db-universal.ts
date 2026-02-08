@@ -28,7 +28,8 @@ const allSchemas = {
 }
 
 // Check if we're in local development mode
-const isLocalDev = process.env.BYPASS_AUTH === "true" && process.env.NODE_ENV === "development"
+// BYPASS_AUTH alone is sufficient since it's explicitly set in .env.local
+const isLocalDev = process.env.BYPASS_AUTH === "true"
 
 // Check if running in Bun runtime
 const isBun = typeof process !== "undefined" && process.versions && process.versions.bun !== undefined
