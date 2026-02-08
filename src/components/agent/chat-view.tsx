@@ -11,7 +11,6 @@ import {
   XIcon,
   Loader2Icon,
   SquarePenIcon,
-  PanelRightClose,
 } from "lucide-react"
 import {
   IconBrandGithub,
@@ -508,6 +507,9 @@ function ChatInput({
               </PromptInputButton>
             )}
             <ModelDropdown />
+            <span className="text-[10px] text-muted-foreground/50 inline-block ml-1 select-none pointer-events-none truncate">
+              Type <span className="font-mono bg-muted/50 px-1 rounded text-[9px]">/help</span> for <span className="hidden sm:inline">useful </span>prompts
+            </span>
           </PromptInputTools>
           <div className="flex items-center gap-1">
             <PromptInputButton
@@ -538,7 +540,7 @@ function ChatInput({
 
 export function ChatView({ variant }: ChatViewProps) {
   const chat = useChatState()
-  const { close, toggle } = useChatPanel()
+  const { toggle } = useChatPanel()
   const isPage = variant === "page"
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -665,7 +667,7 @@ export function ChatView({ variant }: ChatViewProps) {
       if (isPage) setIsActive(true)
       chat.sendMessage({ text })
     },
-    [isPage, chat.sendMessage]
+    [isPage, chat]
   )
 
   const handleIdleSend = useCallback(
@@ -673,14 +675,14 @@ export function ChatView({ variant }: ChatViewProps) {
       setIsActive(true)
       chat.sendMessage({ text })
     },
-    [chat.sendMessage]
+    [chat]
   )
 
   const handleActiveSend = useCallback(
     (text: string) => {
       chat.sendMessage({ text })
     },
-    [chat.sendMessage]
+    [chat]
   )
 
   const suggestions = isPage
@@ -714,23 +716,23 @@ export function ChatView({ variant }: ChatViewProps) {
           {/* Idle hero */}
           <div
             className={cn(
-              "absolute inset-0 flex flex-col items-center justify-center",
+              "absolute inset-0 flex flex-col items-center justify-center -translate-y-[8vh] sm:translate-y-0",
               "transition-all duration-500 ease-in-out",
               isActive
                 ? "opacity-0 translate-y-4 pointer-events-none"
                 : "opacity-100 translate-y-0"
             )}
           >
-            <div className="w-full max-w-2xl px-5 space-y-5 text-center">
+            <div className="w-full max-w-2xl px-5 space-y-10 sm:space-y-20 text-center">
               <div>
                 <span
-                  className="mx-auto mb-2 block bg-foreground size-10"
+                  className="mx-auto mb-4 block bg-foreground size-16 sm:size-24"
                   style={LOGO_MASK}
                 />
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
+                <h1 className="text-2xl sm:text-4xl font-bold tracking-tighter">
                   Compass
                 </h1>
-                <p className="text-muted-foreground/60 mt-1.5 text-xs px-2">
+                <p className="text-muted-foreground/60 mt-3 text-sm sm:text-base px-5 max-w-lg mx-auto leading-relaxed">
                   Development preview — features may be
                   incomplete or change without notice.
                 </p>

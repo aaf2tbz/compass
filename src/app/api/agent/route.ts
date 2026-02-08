@@ -28,9 +28,9 @@ export async function POST(req: Request): Promise<Response> {
 
   const { env, ctx } = {
     env: { DB: null },
-    ctx: { waitUntil: () => { }, passThroughOnException: () => { } },
+    ctx: { waitUntil: (_p: Promise<unknown>) => { }, passThroughOnException: () => { } },
   }
-  const db = (await getDb()) as any
+  const db = (await getDb()) as any // eslint-disable-line @typescript-eslint/no-explicit-any
   const envRecord = env as unknown as Record<string, string>
 
   const apiKey =
@@ -51,11 +51,15 @@ export async function POST(req: Request): Promise<Response> {
     "@/app/actions/dashboards"
   )
 
-  const [memories, registry, dashboardResult] =
+  const [memories, registry, dashboardResult, projectsResult] =
     await Promise.all([
       loadMemoriesForPrompt(db, user.id),
       getRegistry(db, envRecord),
       getCustomDashboards(),
+      db.query.projects.findMany({
+        where: (p: any, { eq }: any) => eq(p.status, "OPEN"), // eslint-disable-line @typescript-eslint/no-explicit-any
+        limit: 10,
+      }),
     ])
 
   const pluginSections = registry.getPromptSections()
@@ -96,6 +100,7 @@ export async function POST(req: Request): Promise<Response> {
       dashboards: dashboardResult.success
         ? dashboardResult.data
         : [],
+      activeProjects: projectsResult,
       mode: "full",
     }),
     messages: await convertToModelMessages(
