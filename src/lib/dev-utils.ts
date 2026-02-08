@@ -6,7 +6,7 @@
 import { getDb } from "@/db"
 
 // Mock D1 database for development
-let mockDb: ReturnType<typeof getDb> | null = null
+const mockDb: ReturnType<typeof getDb> | null = null
 
 /**
  * Initialize mock database for development
@@ -30,7 +30,7 @@ export async function initMockDatabase(): Promise<ReturnType<typeof getDb>> {
  */
 export async function getCloudflareContextDev() {
   const isBypassMode = process.env.BYPASS_AUTH === "true"
-  
+
   if (!isBypassMode) {
     throw new Error(
       "Development mode not enabled. Set BYPASS_AUTH=true in .env.local"
@@ -41,12 +41,12 @@ export async function getCloudflareContextDev() {
   return {
     env: {
       // Mock D1 database - in production this would be the real D1 binding
-      DB: null as any,
+      DB: null as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     },
     cf: {},
     ctx: {
-      waitUntil: () => {},
-      passThroughOnException: () => {},
+      waitUntil: () => { },
+      passThroughOnException: () => { },
     },
   }
 }

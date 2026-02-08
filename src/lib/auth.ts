@@ -72,7 +72,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
       // Ensure mock user exists in DB to prevent FK errors
       try {
-        const db = (await getDb()) as any
+        const db = (await getDb()) as any // eslint-disable-line @typescript-eslint/no-explicit-any
         const existing = await db
           .select()
           .from(users)
@@ -94,7 +94,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
     const workosUser = session.user
 
-    const db = (await getDb()) as any
+    const db = (await getDb()) as any // eslint-disable-line @typescript-eslint/no-explicit-any
 
     // check if user exists in our database
     let dbUser = await db
@@ -143,7 +143,7 @@ export async function ensureUserExists(workosUser: {
   lastName?: string | null
   profilePictureUrl?: string | null
 }): Promise<User> {
-  const db = (await getDb()) as any
+  const db = (await getDb()) as any // eslint-disable-line @typescript-eslint/no-explicit-any
 
   // Check if user already exists
   const existing = await db

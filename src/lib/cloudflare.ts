@@ -13,8 +13,8 @@ const isBypassMode = typeof process !== "undefined" && process.env.BYPASS_AUTH =
 
 interface CloudflareContext {
   env: { DB: D1Database }
-  cf: any
-  ctx: { waitUntil: Function; passThroughOnException: Function }
+  cf: any // eslint-disable-line @typescript-eslint/no-explicit-any
+  ctx: { waitUntil: (...args: any[]) => void; passThroughOnException: (...args: any[]) => void } // eslint-disable-line @typescript-eslint/no-explicit-any
 }
 
 // In bypass mode, provide local SQLite implementation
@@ -31,7 +31,7 @@ export async function getCloudflareContext(): Promise<CloudflareContext> {
     const { getCloudflareContext: getLocalContext } = await import("./cloudflare-shim")
     return getLocalContext()
   }
-  
+
   // Use real Cloudflare context
   const opennext = await import("@opennextjs/cloudflare")
   return opennext.getCloudflareContext()

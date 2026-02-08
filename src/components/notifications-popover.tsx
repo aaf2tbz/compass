@@ -65,7 +65,7 @@ function NotificationsList({
         <IconBell className="text-muted-foreground/30 mb-2 size-8" />
         <p className="text-sm font-medium">No notifications</p>
         <p className="text-muted-foreground text-xs">
-          You're all caught up!
+          You&apos;re all caught up!
         </p>
       </div>
     )

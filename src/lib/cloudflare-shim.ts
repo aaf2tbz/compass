@@ -15,7 +15,7 @@ const isBypassMode = process.env.BYPASS_AUTH === "true"
 
 if (isBypassMode) {
   console.log("[DEV] Cloudflare bypass mode enabled - using local SQLite database")
-  
+
   // Initialize local database
   initLocalDatabase()
 }
@@ -31,9 +31,9 @@ class LocalD1Wrapper implements D1Database {
   }
 
   async prepare(query: string): Promise<D1PreparedStatement> {
-    const stmt = (this.db as any).query(query)
+    const stmt = (this.db as any).query(query) // eslint-disable-line @typescript-eslint/no-explicit-any
     return {
-      bind: (...values: any[]) => ({
+      bind: (...values: any[]) => ({ // eslint-disable-line @typescript-eslint/no-explicit-any
         first: async () => stmt.get(...values),
         run: async () => stmt.run(...values),
         all: async () => stmt.all(...values),
@@ -59,7 +59,7 @@ class LocalD1Wrapper implements D1Database {
   }
 
   async exec(query: string): Promise<D1ExecResult> {
-    const sqlite = (this.db as any).database
+    const sqlite = (this.db as any).database // eslint-disable-line @typescript-eslint/no-explicit-any
     const result = sqlite.exec(query)
     return {
       count: result.changes || 0,
@@ -73,8 +73,8 @@ class LocalD1Wrapper implements D1Database {
  */
 export async function getCloudflareContext(): Promise<{
   env: { DB: D1Database }
-  cf: any
-  ctx: { waitUntil: Function; passThroughOnException: Function }
+  cf: any // eslint-disable-line @typescript-eslint/no-explicit-any
+  ctx: { waitUntil: (...args: any[]) => void; passThroughOnException: (...args: any[]) => void } // eslint-disable-line @typescript-eslint/no-explicit-any
 }> {
   if (!isBypassMode) {
     // Use real Cloudflare context
@@ -95,8 +95,8 @@ export async function getCloudflareContext(): Promise<{
       timezone: "America/Chicago",
     },
     ctx: {
-      waitUntil: () => {},
-      passThroughOnException: () => {},
+      waitUntil: () => { },
+      passThroughOnException: () => { },
     },
   }
 }
