@@ -7,8 +7,6 @@ import {
   IconDashboard,
   IconFiles,
   IconFolder,
-  IconHelp,
-  IconMessageCircle,
   IconReceipt,
   IconSearch,
   IconSettings,
@@ -24,16 +22,10 @@ import { NavFiles } from "@/components/nav-files"
 import { NavProjects } from "@/components/nav-projects"
 import { useCommandMenu } from "@/components/command-menu-provider"
 import { useSettings } from "@/components/settings-provider"
-import { useAgentOptional } from "@/components/agent/chat-provider"
 import type { SidebarUser } from "@/lib/auth"
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
 
@@ -100,10 +92,9 @@ function SidebarNav({
   }>
 }) {
   const pathname = usePathname()
-  const { state, setOpen } = useSidebar()
+  const { state } = useSidebar()
   const { open: openSearch } = useCommandMenu()
   const { open: openSettings } = useSettings()
-  const agent = useAgentOptional()
   const isExpanded = state === "expanded"
   const isFilesMode = pathname?.startsWith("/dashboard/files")
   const isProjectMode = /^\/dashboard\/projects\/[^/]+/.test(
@@ -156,7 +147,6 @@ function SidebarNav({
 export function AppSidebar({
   projects = [],
   dashboards = [],
-  user,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   readonly projects?: ReadonlyArray<{ readonly id: string; readonly name: string }>

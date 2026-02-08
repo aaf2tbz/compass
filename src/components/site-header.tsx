@@ -13,8 +13,6 @@ import {
   IconSettings,
 } from "@tabler/icons-react"
 
-import { cn } from "@/lib/utils"
-
 import { logout } from "@/app/actions/profile"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -120,7 +118,6 @@ export function SiteHeader({
 }: {
   readonly user: SidebarUser | null
 }) {
-  const { theme, setTheme } = useTheme()
   const { open: openCommand, openWithQuery } = useCommandMenu()
   const [headerQuery, setHeaderQuery] = React.useState("")
   const searchInputRef = React.useRef<HTMLInputElement>(null)
