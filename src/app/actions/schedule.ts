@@ -1,7 +1,6 @@
 "use server"
 
-import { getCloudflareContext } from "@opennextjs/cloudflare"
-import { getDb } from "@/db"
+import { getDb } from "@/lib/db-universal"
 import {
   scheduleTasks,
   taskDependencies,
@@ -42,8 +41,7 @@ async function fetchExceptions(
 export async function getSchedule(
   projectId: string
 ): Promise<ScheduleData> {
-  const { env } = await getCloudflareContext()
-  const db = getDb(env.DB)
+  const db = await getDb()
 
   const tasks = await db
     .select()
@@ -86,8 +84,7 @@ export async function createTask(
   }
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { env } = await getCloudflareContext()
-    const db = getDb(env.DB)
+    const db = await getDb()
 
     const exceptions = await fetchExceptions(db, projectId)
     const endDate = calculateEndDate(
@@ -146,8 +143,7 @@ export async function updateTask(
   }
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { env } = await getCloudflareContext()
-    const db = getDb(env.DB)
+    const db = await getDb()
 
     const [task] = await db
       .select()
@@ -223,8 +219,7 @@ export async function deleteTask(
   taskId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { env } = await getCloudflareContext()
-    const db = getDb(env.DB)
+    const db = await getDb()
 
     const [task] = await db
       .select()
@@ -249,8 +244,7 @@ export async function reorderTasks(
   items: { id: string; sortOrder: number }[]
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { env } = await getCloudflareContext()
-    const db = getDb(env.DB)
+    const db = await getDb()
 
     for (const item of items) {
       await db
@@ -275,8 +269,7 @@ export async function createDependency(data: {
   projectId: string
 }): Promise<{ success: boolean; error?: string }> {
   try {
-    const { env } = await getCloudflareContext()
-    const db = getDb(env.DB)
+    const db = await getDb()
 
     // get existing deps for cycle check
     const schedule = await getSchedule(data.projectId)
@@ -327,8 +320,7 @@ export async function deleteDependency(
   projectId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { env } = await getCloudflareContext()
-    const db = getDb(env.DB)
+    const db = await getDb()
 
     await db.delete(taskDependencies).where(eq(taskDependencies.id, depId))
     await recalcCriticalPath(db, projectId)
@@ -345,8 +337,7 @@ export async function updateTaskStatus(
   status: TaskStatus
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { env } = await getCloudflareContext()
-    const db = getDb(env.DB)
+    const db = await getDb()
 
     const [task] = await db
       .select()

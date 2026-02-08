@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { usePathname } from "next/navigation"
-import { MessageSquare } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
@@ -82,6 +81,11 @@ export function ChatPanelShell() {
 
   // keyboard shortcuts (panel mode only)
   useEffect(() => {
+    // If dashboard, we ignore shortcut because the shell itself is hidden!
+    // But we are rendering because we are before the return null.
+    // So we should check if isDashboard here for safety?
+    // Actually, if isDashboard is true, the shell component might still mount/unmount?
+    // The conditional return is below. So this effect RUNS.
     if (isDashboard) return
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -139,6 +143,26 @@ export function ChatPanelShell() {
       ? { paddingBottom: keyboardHeight }
       : undefined
 
+  // Compass rotation animation
+  const [compassRotation, setCompassRotation] = useState(0)
+  useEffect(() => {
+    // Initial random rotation
+    setCompassRotation(Math.floor(Math.random() * 360))
+
+    const updateRotation = () => {
+      const newRotation = Math.floor(Math.random() * 360)
+      setCompassRotation(newRotation)
+    }
+
+    const interval = setInterval(() => {
+      updateRotation()
+    }, 1000 + Math.random() * 1500)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  if (isDashboard) return null
+
   return (
     <>
       <div
@@ -148,19 +172,28 @@ export function ChatPanelShell() {
           isDashboard
             ? "flex-1 bg-background"
             : [
-                "bg-background dark:bg-[oklch(0.255_0_0)]",
-                "fixed inset-0 z-50",
-                "md:relative md:inset-auto md:z-auto",
-                "md:shrink-0 md:overflow-hidden",
-                "md:rounded-xl md:border md:border-border md:shadow-lg md:my-2 md:mr-2",
-                isResizing && "transition-none",
-                isOpen
-                  ? "translate-x-0 md:opacity-100"
-                  : "translate-x-full md:translate-x-0 md:w-0 md:border-transparent md:shadow-none md:opacity-0",
-              ]
+              "bg-background",
+              "fixed z-50",
+              "inset-0 md:inset-0",
+              "top-14 bottom-14 md:top-auto md:bottom-auto",
+              "md:relative md:inset-auto md:z-auto",
+              "md:shrink-0 md:overflow-hidden",
+              "md:rounded-xl md:border md:border-border md:shadow-lg md:my-2 md:mr-2",
+              isResizing && "transition-none",
+              isOpen
+                ? "translate-x-0 md:opacity-100"
+                : "translate-x-full md:translate-x-0 md:w-0 md:border-transparent md:shadow-none md:opacity-0 pointer-events-none",
+            ]
         )}
         style={{ ...panelStyle, ...keyboardStyle }}
       >
+        {/* Mobile header */}
+        {!isDashboard && (
+          <div className="flex items-center justify-center bg-background px-4 py-3 md:hidden">
+            <span className="text-base font-semibold text-foreground">Compass</span>
+          </div>
+        )}
+
         {/* Desktop resize handle (panel mode only) */}
         {!isDashboard && (
           <div
@@ -174,25 +207,35 @@ export function ChatPanelShell() {
         />
       </div>
 
-      {/* Mobile backdrop (panel mode only) */}
-      {!isDashboard && isOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/20 md:hidden"
-          onClick={close}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Mobile FAB (panel mode only) */}
+      {/* Open chat button - shows when chat is closed */}
       {!isDashboard && !isOpen && (
-        <Button
-          size="icon"
-          className="fixed bottom-4 right-4 z-50 h-12 w-12 rounded-full shadow-lg md:hidden"
+        <button
           onClick={toggle}
+          className={cn(
+            "fixed z-50 flex items-center justify-center rounded-full bg-teal-500 text-white shadow-lg transition-all duration-200 hover:scale-105 active:scale-95",
+            "bottom-20 right-4 md:bottom-8 md:right-8",
+            "h-14 w-14 md:h-auto md:w-auto md:px-4 md:py-3"
+          )}
           aria-label="Open chat"
         >
-          <MessageSquare className="h-5 w-5" />
-        </Button>
+          <span
+            className="block bg-white md:mr-2"
+            style={{
+              maskImage: "url(/logo-black.png)",
+              maskSize: "contain",
+              maskRepeat: "no-repeat",
+              WebkitMaskImage: "url(/logo-black.png)",
+              WebkitMaskSize: "contain",
+              WebkitMaskRepeat: "no-repeat",
+              width: "1.75rem",
+              height: "1.75rem",
+              transform: `rotate(${compassRotation}deg)`,
+              transition: "transform 1.2s ease-in-out",
+              willChange: "transform",
+            }}
+          />
+          <span className="hidden md:inline text-sm font-medium">Chat with Compass</span>
+        </button>
       )}
     </>
   )

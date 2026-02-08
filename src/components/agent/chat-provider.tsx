@@ -432,49 +432,50 @@ export function ChatProvider({
   }, [])
 
   // resume last conversation on first open
-  React.useEffect(() => {
-    if (!isOpen || resumeLoaded) return
-
-    const resume = async () => {
-      const result = await loadConversations()
-      if (
-        !result.success ||
-        !result.data ||
-        result.data.length === 0
-      ) {
-        setResumeLoaded(true)
-        return
-      }
-
-      const lastConv = result.data[0]
-      const msgResult = await loadConversation(lastConv.id)
-      if (
-        !msgResult.success ||
-        !msgResult.data ||
-        msgResult.data.length === 0
-      ) {
-        setResumeLoaded(true)
-        return
-      }
-
-      setConversationId(lastConv.id)
-
-      const restored: UIMessage[] = msgResult.data.map(
-        (m) => ({
-          id: m.id,
-          role: m.role as "user" | "assistant",
-          parts:
-            (m.parts as UIMessage["parts"]) ?? [
-              { type: "text" as const, text: m.content },
-            ],
-        })
-      )
-      chat.setMessages(restored)
-      setResumeLoaded(true)
-    }
-
-    resume()
-  }, [isOpen, resumeLoaded, chat.setMessages])
+  // resume last conversation on first open
+  // React.useEffect(() => {
+  //   if (!isOpen || resumeLoaded) return
+  //
+  //   const resume = async () => {
+  //     const result = await loadConversations()
+  //     if (
+  //       !result.success ||
+  //       !result.data ||
+  //       result.data.length === 0
+  //     ) {
+  //       setResumeLoaded(true)
+  //       return
+  //     }
+  //
+  //     const lastConv = result.data[0]
+  //     const msgResult = await loadConversation(lastConv.id)
+  //     if (
+  //       !msgResult.success ||
+  //       !msgResult.data ||
+  //       msgResult.data.length === 0
+  //     ) {
+  //       setResumeLoaded(true)
+  //       return
+  //     }
+  //
+  //     setConversationId(lastConv.id)
+  //
+  //     const restored: UIMessage[] = msgResult.data.map(
+  //       (m) => ({
+  //         id: m.id,
+  //         role: m.role as "user" | "assistant",
+  //         parts:
+  //           (m.parts as UIMessage["parts"]) ?? [
+  //             { type: "text" as const, text: m.content },
+  //           ],
+  //       })
+  //     )
+  //     chat.setMessages(restored)
+  //     setResumeLoaded(true)
+  //   }
+  //
+  //   resume()
+  // }, [isOpen, resumeLoaded, chat.setMessages])
 
   const newChat = React.useCallback(() => {
     chat.setMessages([])

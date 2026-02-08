@@ -6,7 +6,6 @@ import {
   type UIMessage,
 } from "ai"
 import { APICallError } from "@ai-sdk/provider"
-import { getCloudflareContext } from "@opennextjs/cloudflare"
 import {
   resolveModelForUser,
   createModelFromId,
@@ -19,7 +18,7 @@ import { loadMemoriesForPrompt } from "@/lib/agent/memory"
 import { getRegistry } from "@/lib/agent/plugins/registry"
 import { saveStreamUsage } from "@/lib/agent/usage"
 import { getCurrentUser } from "@/lib/auth"
-import { getDb } from "@/db"
+import { getDb } from "@/lib/db-universal"
 
 export async function POST(req: Request): Promise<Response> {
   const user = await getCurrentUser()
@@ -27,11 +26,15 @@ export async function POST(req: Request): Promise<Response> {
     return new Response("Unauthorized", { status: 401 })
   }
 
-  const { env, ctx } = await getCloudflareContext()
-  const db = getDb(env.DB)
+  const { env, ctx } = {
+    env: { DB: null },
+    ctx: { waitUntil: () => { }, passThroughOnException: () => { } },
+  }
+  const db = (await getDb()) as any
   const envRecord = env as unknown as Record<string, string>
 
-  const apiKey = envRecord.OPENROUTER_API_KEY
+  const apiKey =
+    envRecord.OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY
   if (!apiKey) {
     return new Response(
       JSON.stringify({
@@ -74,7 +77,7 @@ export async function POST(req: Request): Promise<Response> {
   if (!modelId || !modelId.includes("/")) {
     console.error(
       `Invalid model ID resolved: "${modelId}",` +
-        ` falling back to default`
+      ` falling back to default`
     )
     modelId = DEFAULT_MODEL_ID
   }

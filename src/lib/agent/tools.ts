@@ -1,7 +1,6 @@
 import { tool } from "ai"
 import { z } from "zod/v4"
-import { getCloudflareContext } from "@opennextjs/cloudflare"
-import { getDb } from "@/db"
+import { getDb } from "@/lib/db-universal"
 import { getCurrentUser } from "@/lib/auth"
 import { saveMemory, searchMemories } from "@/lib/agent/memory"
 import {
@@ -150,8 +149,7 @@ const recallInputSchema = z.object({
 type RecallInput = z.infer<typeof recallInputSchema>
 
 async function executeQueryData(input: QueryDataInput) {
-  const { env } = await getCloudflareContext()
-  const db = getDb(env.DB)
+  const db = await getDb()
   const cap = input.limit ?? 20
 
   switch (input.queryType) {
@@ -326,8 +324,7 @@ export const agentTools = {
       "mentions a fact worth remembering across sessions.",
     inputSchema: rememberInputSchema,
     execute: async (input: RememberInput) => {
-      const { env } = await getCloudflareContext()
-      const db = getDb(env.DB)
+      const db = await getDb()
       const user = await getCurrentUser()
       if (!user) return { error: "not authenticated" }
 
@@ -355,8 +352,7 @@ export const agentTools = {
       "need to look up a past preference or decision.",
     inputSchema: recallInputSchema,
     execute: async (input: RecallInput) => {
-      const { env } = await getCloudflareContext()
-      const db = getDb(env.DB)
+      const db = await getDb()
       const user = await getCurrentUser()
       if (!user) return { error: "not authenticated" }
 

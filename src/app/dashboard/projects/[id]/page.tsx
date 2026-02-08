@@ -1,7 +1,6 @@
 export const dynamic = "force-dynamic"
 
-import { getCloudflareContext } from "@opennextjs/cloudflare"
-import { getDb } from "@/db"
+import { getDb } from "@/lib/db-universal"
 import { projects, scheduleTasks } from "@/db/schema"
 import { eq } from "drizzle-orm"
 import { notFound } from "next/navigation"
@@ -63,10 +62,10 @@ export default async function ProjectSummaryPage({
   let tasks: ScheduleTask[] = []
 
   try {
-    const { env } = await getCloudflareContext()
-    if (!env?.DB) throw new Error("D1 not available")
+    const { env } = { env: { DB: null } }
+    if (!db) throw new Error("D1 not available")
 
-    const db = getDb(env.DB)
+    const db = getDb(db)
 
     const [found] = await db
       .select()

@@ -7,10 +7,12 @@ import {
   IconMenu2,
   IconMoon,
   IconSearch,
-  IconSparkles,
+  IconMessageCircle,
   IconSun,
   IconUserCircle,
 } from "@tabler/icons-react"
+
+import { cn } from "@/lib/utils"
 
 import { logout } from "@/app/actions/profile"
 
@@ -28,10 +30,53 @@ import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
 import { NotificationsPopover } from "@/components/notifications-popover"
 import { useCommandMenu } from "@/components/command-menu-provider"
 import { useFeedback } from "@/components/feedback-widget"
-import { useAgentOptional } from "@/components/agent/chat-provider"
 import { AccountModal } from "@/components/account-modal"
 import { getInitials } from "@/lib/utils"
 import type { SidebarUser } from "@/lib/auth"
+
+function ThemeToggle() {
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return <div className="size-7" /> // placeholder
+  }
+
+  const isDark = theme === "dark"
+
+  return (
+    <div
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      className={cn(
+        "flex h-7 w-12 cursor-pointer items-center rounded-full border border-border/50 bg-muted/50 p-1 transition-colors hover:bg-muted/70",
+        isDark ? "justify-end" : "justify-start"
+      )}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault()
+          setTheme(isDark ? "light" : "dark")
+        }
+      }}
+      aria-label="Toggle theme"
+    >
+      <div
+        className="flex size-5 items-center justify-center rounded-full bg-background shadow-sm ring-0 transition-transform"
+      >
+        {isDark ? (
+          <IconMoon className="size-3 text-foreground" />
+        ) : (
+          <IconSun className="size-3 text-foreground" />
+        )}
+      </div>
+    </div>
+  )
+}
 
 export function SiteHeader({
   user,
@@ -43,7 +88,6 @@ export function SiteHeader({
   const [headerQuery, setHeaderQuery] = React.useState("")
   const searchInputRef = React.useRef<HTMLInputElement>(null)
   const { open: openFeedback } = useFeedback()
-  const agentContext = useAgentOptional()
   const [accountOpen, setAccountOpen] = React.useState(false)
   const { toggleSidebar } = useSidebar()
 
@@ -55,10 +99,18 @@ export function SiteHeader({
 
   return (
     <header className="sticky top-0 z-40 flex shrink-0 items-center border-b border-border/40 bg-background/80 backdrop-blur-sm">
-      {/* mobile header: single unified pill */}
-      <div className="flex h-14 w-full items-center px-3 md:hidden">
+      {/* mobile header */}
+      <div className="flex h-14 w-full items-center justify-between px-3 md:hidden">
+        <button
+          className="flex size-9 items-center justify-center rounded-full hover:bg-muted/50"
+          onClick={toggleSidebar}
+          aria-label="Open menu"
+        >
+          <IconMenu2 className="size-5 text-muted-foreground" />
+        </button>
+
         <div
-          className="flex h-11 w-full items-center gap-2 rounded-full bg-muted/50 px-2.5 cursor-pointer"
+          className="flex h-10 flex-1 max-w-xs mx-2 items-center gap-2 rounded-full bg-muted/50 px-3 cursor-pointer"
           onClick={openCommand}
           role="button"
           tabIndex={0}
@@ -66,54 +118,23 @@ export function SiteHeader({
             if (e.key === "Enter" || e.key === " ") openCommand()
           }}
         >
-          <button
-            className="flex size-8 shrink-0 items-center justify-center rounded-full -ml-0.5 hover:bg-background/60"
-            onClick={(e) => {
-              e.stopPropagation()
-              toggleSidebar()
-            }}
-            aria-label="Open menu"
-          >
-            <IconMenu2 className="size-5 text-muted-foreground" />
-          </button>
           <IconSearch className="size-4 text-muted-foreground shrink-0" />
           <span className="text-muted-foreground text-sm flex-1">
             Search...
           </span>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="shrink-0 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Avatar className="size-8 grayscale">
-                  {user?.avatar && <AvatarImage src={user.avatar} alt={user.name} />}
-                  <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-                </Avatar>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuLabel className="font-normal">
-                <p className="text-sm font-medium">{user?.name ?? "User"}</p>
-                <p className="text-muted-foreground text-xs">{user?.email ?? ""}</p>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => setAccountOpen(true)}>
-                <IconUserCircle />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setTheme(theme === "dark" ? "light" : "dark")}>
-                <IconSun className="hidden dark:block" />
-                <IconMoon className="block dark:hidden" />
-                Toggle theme
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={handleLogout}>
-                <IconLogout />
-                Log out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <NotificationsPopover />
+          <button
+            onClick={openFeedback}
+            className="flex h-8 items-center gap-1.5 rounded-full bg-primary px-3 text-primary-foreground text-xs font-medium shadow-sm hover:bg-primary/90 active:scale-95 transition-all"
+            aria-label="Send feedback"
+          >
+            <IconMessageCircle className="size-3.5" />
+            Feedback
+          </button>
         </div>
       </div>
 
@@ -154,33 +175,16 @@ export function SiteHeader({
         </div>
 
         <div className="flex shrink-0 items-center justify-end gap-0.5">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground/70 hover:text-foreground text-xs h-7 px-2"
-            onClick={openFeedback}
-          >
-            Feedback
-          </Button>
           <NotificationsPopover />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 text-muted-foreground/70 hover:text-foreground"
-            onClick={() => agentContext?.toggle()}
-            aria-label="Toggle assistant"
+          <button
+            onClick={openFeedback}
+            className="flex h-8 items-center gap-1.5 rounded-full bg-primary px-3 text-primary-foreground text-xs font-medium shadow-sm hover:bg-primary/90 active:scale-95 transition-all mx-1"
+            aria-label="Send feedback"
           >
-            <IconSparkles className="size-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 text-muted-foreground/70 hover:text-foreground"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          >
-            <IconSun className="size-3.5 hidden dark:block" />
-            <IconMoon className="size-3.5 block dark:hidden" />
-          </Button>
+            <IconMessageCircle className="size-3.5" />
+            Feedback
+          </button>
+          <ThemeToggle />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="ml-0.5 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">

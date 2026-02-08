@@ -1,7 +1,6 @@
 export const dynamic = "force-dynamic"
 
-import { getCloudflareContext } from "@opennextjs/cloudflare"
-import { getDb } from "@/db"
+import { getDb } from "@/lib/db-universal"
 import { projects } from "@/db/schema"
 import { asc } from "drizzle-orm"
 import { redirect } from "next/navigation"
@@ -9,10 +8,10 @@ import { IconFolder } from "@tabler/icons-react"
 
 export default async function ProjectsPage() {
   try {
-    const { env } = await getCloudflareContext()
-    if (!env?.DB) throw new Error("D1 not available")
+    const { env } = { env: { DB: null } }
+    if (!db) throw new Error("D1 not available")
 
-    const db = getDb(env.DB)
+    const db = getDb(db)
     const [first] = await db
       .select({ id: projects.id })
       .from(projects)

@@ -140,6 +140,7 @@ export function ModelDropdown(): React.JSX.Element {
     React.useState(false)
   const [activeProvider, setActiveProvider] =
     React.useState<string | null>(null)
+  const [error, setError] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     if (state.configLoaded) return
@@ -224,6 +225,7 @@ export function ModelDropdown(): React.JSX.Element {
   React.useEffect(() => {
     if (!open || listLoaded) return
     setLoading(true)
+    setError(null)
     getModelList().then((result) => {
       if (result.success) {
         const sorted = [...result.data]
@@ -248,6 +250,8 @@ export function ModelDropdown(): React.JSX.Element {
             ),
           }))
         setGroups(sorted)
+      } else {
+        setError(result.error || "Failed to load models")
       }
       setListLoaded(true)
       setLoading(false)
@@ -484,6 +488,11 @@ export function ModelDropdown(): React.JSX.Element {
               {loading ? (
                 <div className="flex items-center justify-center h-full">
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                </div>
+              ) : error ? (
+                <div className="flex flex-col items-center justify-center h-full text-xs text-destructive px-4 text-center">
+                  <p className="font-medium mb-1">Error loading models</p>
+                  <p className="text-muted-foreground">{error}</p>
                 </div>
               ) : filtered.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-xs text-muted-foreground">

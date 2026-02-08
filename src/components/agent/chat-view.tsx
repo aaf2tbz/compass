@@ -11,6 +11,7 @@ import {
   XIcon,
   Loader2Icon,
   SquarePenIcon,
+  PanelRightClose,
 } from "lucide-react"
 import {
   IconBrandGithub,
@@ -19,6 +20,7 @@ import {
   IconStar,
   IconAlertCircle,
   IconEye,
+  IconArrowLeft,
 } from "@tabler/icons-react"
 import {
   isTextUIPart,
@@ -68,7 +70,7 @@ import {
 import { useAudioRecorder } from "@/hooks/use-audio-recorder"
 import type { AudioRecorder } from "@/hooks/use-audio-recorder"
 import { AudioWaveform } from "@/components/ai/audio-waveform"
-import { useChatState } from "./chat-provider"
+import { useChatState, useChatPanel } from "./chat-provider"
 import { ModelDropdown } from "./model-dropdown"
 import { getRepoStats } from "@/app/actions/github"
 
@@ -295,11 +297,11 @@ const ChatMessage = memo(
               <ToolInput input={tp.input} />
               {(tp.state === "output-available" ||
                 tp.state === "output-error") && (
-                <ToolOutput
-                  output={tp.output}
-                  errorText={tp.errorText}
-                />
-              )}
+                  <ToolOutput
+                    output={tp.output}
+                    errorText={tp.errorText}
+                  />
+                )}
             </ToolContent>
           </Tool>
         )
@@ -386,6 +388,7 @@ function ChatInput({
   isGenerating,
   onSend,
   onNewChat,
+  onToggle,
   className,
 }: {
   readonly textareaRef: React.RefObject<
@@ -397,11 +400,34 @@ function ChatInput({
   readonly isGenerating: boolean
   readonly onSend: (text: string) => void
   readonly onNewChat?: () => void
+  readonly onToggle?: () => void
   readonly className?: string
 }) {
   const isRecording = recorder.state === "recording"
   const isTranscribing = recorder.state === "transcribing"
   const isIdle = recorder.state === "idle"
+
+  const [compassRotation, setCompassRotation] = useState(0)
+
+  useEffect(() => {
+    const updateRotation = () => {
+      const newRotation = Math.floor(Math.random() * 360)
+      setCompassRotation(newRotation)
+    }
+
+    // Initial delay
+    const initialTimer = setTimeout(updateRotation, 1000)
+
+    // Periodic updates
+    const interval = setInterval(() => {
+      updateRotation()
+    }, 3000 + Math.random() * 2000)
+
+    return () => {
+      clearTimeout(initialTimer)
+      clearInterval(interval)
+    }
+  }, [])
 
   return (
     <PromptInput
@@ -450,6 +476,32 @@ function ChatInput({
       {!isRecording && !isTranscribing && (
         <PromptInputFooter>
           <PromptInputTools>
+            {onToggle && (
+              <PromptInputButton
+                onClick={onToggle}
+                aria-label="Toggle chat"
+                className="h-10 w-10 rounded-full bg-teal-500 hover:bg-teal-600 text-white border-0 shadow-md group relative"
+              >
+                {/* Compass Logo */}
+                <span
+                  className="absolute inset-0 m-auto size-5 bg-white transition-all duration-[700ms] ease-in-out group-hover:rotate-180 group-hover:opacity-0"
+                  style={{
+                    maskImage: "url(/logo-black.png)",
+                    maskSize: "contain",
+                    maskRepeat: "no-repeat",
+                    maskPosition: "center",
+                    WebkitMaskImage: "url(/logo-black.png)",
+                    WebkitMaskSize: "contain",
+                    WebkitMaskRepeat: "no-repeat",
+                    WebkitMaskPosition: "center",
+                    transform: `rotate(${compassRotation}deg)`,
+                    transition: "transform 2s ease-in-out",
+                  }}
+                />
+                {/* Back Arrow - appears on hover, rotates in */}
+                <IconArrowLeft className="text-white absolute inset-0 m-auto size-5 transition-all duration-[700ms] ease-in-out -rotate-180 opacity-0 group-hover:rotate-0 group-hover:opacity-100" />
+              </PromptInputButton>
+            )}
             {onNewChat && (
               <PromptInputButton onClick={onNewChat} aria-label="New chat">
                 <SquarePenIcon className="size-4" />
@@ -471,10 +523,10 @@ function ChatInput({
             <PromptInputSubmit
               status={
                 status as
-                  | "streaming"
-                  | "submitted"
-                  | "ready"
-                  | "error"
+                | "streaming"
+                | "submitted"
+                | "ready"
+                | "error"
               }
             />
           </div>
@@ -486,6 +538,7 @@ function ChatInput({
 
 export function ChatView({ variant }: ChatViewProps) {
   const chat = useChatState()
+  const { close, toggle } = useChatPanel()
   const isPage = variant === "page"
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -785,13 +838,13 @@ export function ChatView({ variant }: ChatViewProps) {
         {/* Bottom input - active only */}
         <div
           className={cn(
-            "shrink-0 px-4 transition-all duration-500 ease-in-out",
+            "shrink-0 w-full transition-all duration-500 ease-in-out",
             isActive
-              ? "opacity-100 translate-y-0 pt-2 pb-6"
+              ? "opacity-100 translate-y-0 px-4 pb-4 md:p-4 md:pb-6"
               : "opacity-0 translate-y-4 max-h-0 overflow-hidden pointer-events-none py-0"
           )}
         >
-          <div className="mx-auto max-w-3xl">
+          <div className="mx-auto w-full max-w-3xl">
             <ChatInput
               textareaRef={textareaRef}
               placeholder="Ask follow-up..."
@@ -800,7 +853,7 @@ export function ChatView({ variant }: ChatViewProps) {
               isGenerating={chat.isGenerating}
               onSend={handleActiveSend}
               onNewChat={chat.messages.length > 0 ? chat.newChat : undefined}
-              className="rounded-2xl"
+              className="rounded-2xl w-full"
             />
           </div>
         </div>
@@ -815,7 +868,7 @@ export function ChatView({ variant }: ChatViewProps) {
       <Conversation className="flex-1">
         <ConversationContent>
           {chat.messages.length === 0 ? (
-            <div className="flex flex-col items-center gap-4 pt-8">
+            <div className="flex flex-col items-center gap-4 pt-8 w-full">
               <Suggestions>
                 {suggestions.map((s) => (
                   <Suggestion
@@ -848,16 +901,18 @@ export function ChatView({ variant }: ChatViewProps) {
       </Conversation>
 
       {/* Input */}
-      <div className="p-3">
-            <ChatInput
-              textareaRef={textareaRef}
-              placeholder="Ask anything..."
-              recorder={recorder}
-              status={chat.status}
-              isGenerating={chat.isGenerating}
-              onSend={handleActiveSend}
-              onNewChat={chat.messages.length > 0 ? chat.newChat : undefined}
-            />
+      <div className="w-full px-4 pb-4 md:p-3 md:pb-3">
+        <ChatInput
+          textareaRef={textareaRef}
+          placeholder="Ask anything..."
+          recorder={recorder}
+          status={chat.status}
+          isGenerating={chat.isGenerating}
+          onSend={handleActiveSend}
+          onNewChat={chat.messages.length > 0 ? chat.newChat : undefined}
+          onToggle={toggle}
+          className="w-full"
+        />
       </div>
     </div>
   )

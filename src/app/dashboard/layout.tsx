@@ -43,48 +43,48 @@ export default async function DashboardLayout({
 
   return (
     <SettingsProvider>
-    <ChatProvider>
-    <ProjectListProvider projects={projectList}>
-    <PageActionsProvider>
-    <CommandMenuProvider>
-      <BiometricGuard>
-      <SidebarProvider
-        defaultOpen={false}
-        className="h-screen overflow-hidden"
-        style={
-          {
-            "--sidebar-width": "calc(var(--spacing) * 72)",
-          } as React.CSSProperties
-        }
-      >
-        <AppSidebar variant="inset" projects={projectList} dashboards={dashboardList} user={user} />
-        <FeedbackWidget>
-          <SidebarInset className="overflow-hidden">
-            <OfflineBanner />
-            <SiteHeader user={user} />
-            <div className="flex min-h-0 flex-1 overflow-hidden">
-              <DashboardContextMenu>
-                <MainContent>
-                  {children}
-                </MainContent>
-              </DashboardContextMenu>
-              <ChatPanelShell />
-            </div>
-          </SidebarInset>
-        </FeedbackWidget>
-        <MobileBottomNav />
-        <NativeShell />
-        <PushNotificationRegistrar />
-        <p className="pointer-events-none fixed bottom-3 left-0 right-0 hidden text-center text-xs text-muted-foreground/60 md:block">
-          Pre-alpha build
-        </p>
-        <Toaster position="bottom-right" />
-      </SidebarProvider>
-      </BiometricGuard>
-    </CommandMenuProvider>
-    </PageActionsProvider>
-    </ProjectListProvider>
-    </ChatProvider>
+      <ChatProvider>
+        <ProjectListProvider projects={projectList}>
+          <PageActionsProvider>
+            <CommandMenuProvider>
+              <BiometricGuard>
+                <SidebarProvider
+                  defaultOpen={false}
+                  className="h-screen overflow-hidden"
+                  style={
+                    {
+                      "--sidebar-width": "calc(var(--spacing) * 72)",
+                    } as React.CSSProperties
+                  }
+                >
+                  <AppSidebar variant="inset" projects={projectList} dashboards={dashboardList} user={user} />
+                  <FeedbackWidget>
+                    <SidebarInset className="overflow-hidden">
+                      <OfflineBanner />
+                      <SiteHeader user={user} />
+                      <div className="flex min-h-0 flex-1 overflow-hidden">
+                        <DashboardContextMenu>
+                          <MainContent>
+                            {children}
+                          </MainContent>
+                        </DashboardContextMenu>
+                        <ChatPanelShell />
+                      </div>
+                    </SidebarInset>
+                  </FeedbackWidget>
+
+                  <NativeShell />
+                  <PushNotificationRegistrar />
+                  <p className="pointer-events-none fixed bottom-3 left-0 right-0 hidden text-center text-xs text-muted-foreground/60 md:block">
+                    Pre-alpha build
+                  </p>
+                  <Toaster position="bottom-right" />
+                </SidebarProvider>
+              </BiometricGuard>
+            </CommandMenuProvider>
+          </PageActionsProvider>
+        </ProjectListProvider>
+      </ChatProvider>
     </SettingsProvider>
   )
 }

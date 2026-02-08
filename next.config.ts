@@ -1,3 +1,35 @@
+/**
+ * Module Patching for Development Bypass
+ * 
+ * This file patches Node.js module loading to redirect @opennextjs/cloudflare
+ * imports to our local shim when BYPASS_AUTH is enabled.
+ */
+
+import Module from "module";
+
+const isBypassMode = process.env.BYPASS_AUTH === "true";
+
+if (isBypassMode) {
+    const originalResolveFilename = (Module as any)._resolveFilename;
+    
+    (Module as any)._resolveFilename = function (
+        request: string,
+        parent: any,
+        isMain: boolean,
+        options?: any
+    ) {
+        // Redirect @opennextjs/cloudflare to our shim
+        if (request === "@opennextjs/cloudflare") {
+            return require.resolve("./src/lib/cloudflare-shim.ts");
+        }
+        
+        return originalResolveFilename(request, parent, isMain, options);
+    };
+    
+    console.log("[DEV] Module patching enabled for Cloudflare bypass");
+}
+
+// Now continue with normal config
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -19,12 +51,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-
-// Enable calling `getCloudflareContext()` in `next dev`.
-// See https://opennext.js.org/cloudflare/bindings#local-access-to-bindings.
-// Only init in dev -- build and lint don't need the wrangler proxy.
-if (process.env.NODE_ENV === "development") {
-    import("@opennextjs/cloudflare").then((mod) =>
-        mod.initOpenNextCloudflareForDev()
-    );
-}
