@@ -34,8 +34,8 @@ const isLocalDev = process.env.BYPASS_AUTH === "true" && process.env.NODE_ENV ==
 const isBun = typeof process !== "undefined" && process.versions && process.versions.bun !== undefined
 
 // Local database instance
-let localDb: any | null = null
-let sqliteDb: any | null = null
+let localDb: any | null = null // eslint-disable-line @typescript-eslint/no-explicit-any
+let sqliteDb: any | null = null // eslint-disable-line @typescript-eslint/no-explicit-any
 
 /**
  * Initialize local SQLite database using Bun or better-sqlite3

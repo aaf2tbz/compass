@@ -28,7 +28,7 @@ export async function POST(req: Request): Promise<Response> {
 
   const { env, ctx } = {
     env: { DB: null },
-    ctx: { waitUntil: (_p: Promise<unknown>) => { }, passThroughOnException: () => { } },
+    ctx: { waitUntil: (..._args: any[]) => { }, passThroughOnException: (..._args: any[]) => { } }, // eslint-disable-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
   }
   const db = (await getDb()) as any // eslint-disable-line @typescript-eslint/no-explicit-any
   const envRecord = env as unknown as Record<string, string>
