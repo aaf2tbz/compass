@@ -29,6 +29,7 @@ import { MemoriesTable } from "@/components/agent/memories-table"
 import { SkillsTab } from "@/components/settings/skills-tab"
 import { AIModelTab } from "@/components/settings/ai-model-tab"
 import { AppearanceTab } from "@/components/settings/appearance-tab"
+import { ClaudeCodeTab } from "@/components/settings/claude-code-tab"
 import { useNative } from "@/hooks/use-native"
 import { useBiometricAuth } from "@/hooks/use-biometric-auth"
 
@@ -46,6 +47,110 @@ export function SettingsModal({
   const native = useNative()
   const biometric = useBiometricAuth()
 
+  const generalPage = (
+    <>
+      <div className="space-y-1.5">
+        <Label htmlFor="timezone" className="text-xs">
+          Timezone
+        </Label>
+        <Select value={timezone} onValueChange={setTimezone}>
+          <SelectTrigger id="timezone" className="w-full h-9">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="America/New_York">
+              Eastern (ET)
+            </SelectItem>
+            <SelectItem value="America/Chicago">
+              Central (CT)
+            </SelectItem>
+            <SelectItem value="America/Denver">
+              Mountain (MT)
+            </SelectItem>
+            <SelectItem value="America/Los_Angeles">
+              Pacific (PT)
+            </SelectItem>
+            <SelectItem value="Europe/London">
+              London (GMT)
+            </SelectItem>
+            <SelectItem value="Europe/Berlin">
+              Berlin (CET)
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Separator />
+
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <Label className="text-xs">Weekly digest</Label>
+          <p className="text-muted-foreground text-xs">
+            Receive a summary of activity each week.
+          </p>
+        </div>
+        <Switch
+          checked={weeklyDigest}
+          onCheckedChange={setWeeklyDigest}
+          className="shrink-0"
+        />
+      </div>
+    </>
+  )
+
+  const notificationsPage = (
+    <>
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <Label className="text-xs">Email notifications</Label>
+          <p className="text-muted-foreground text-xs">
+            Get notified about project updates via email.
+          </p>
+        </div>
+        <Switch
+          checked={emailNotifs}
+          onCheckedChange={setEmailNotifs}
+          className="shrink-0"
+        />
+      </div>
+
+      <Separator />
+
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <Label className="text-xs">Push notifications</Label>
+          <p className="text-muted-foreground text-xs">
+            Receive push notifications in your browser.
+          </p>
+        </div>
+        <Switch
+          checked={pushNotifs}
+          onCheckedChange={setPushNotifs}
+          className="shrink-0"
+        />
+      </div>
+    </>
+  )
+
+  const appearancePage = <AppearanceTab />
+
+  const integrationsPage = (
+    <>
+      <GoogleDriveConnectionStatus />
+      <Separator />
+      <NetSuiteConnectionStatus />
+      <SyncControls />
+      <Separator />
+      <ClaudeCodeTab />
+    </>
+  )
+
+  const slabMemoryPage = <MemoriesTable />
+
+  const aiModelPage = <AIModelTab />
+
+  const skillsPage = <SkillsTab />
+
   return (
     <ResponsiveDialog
       open={open}
@@ -54,7 +159,9 @@ export function SettingsModal({
       description="Manage your app preferences."
       className="sm:max-w-2xl"
     >
-      <ResponsiveDialogBody>
+      <ResponsiveDialogBody
+        pages={[generalPage, notificationsPage, appearancePage, integrationsPage, aiModelPage, slabMemoryPage, skillsPage]}
+      >
         <Tabs defaultValue="general" className="w-full">
           <TabsList className="w-full inline-flex justify-start overflow-x-auto">
             <TabsTrigger value="general" className="text-xs sm:text-sm shrink-0">
@@ -201,6 +308,8 @@ export function SettingsModal({
             <Separator />
             <NetSuiteConnectionStatus />
             <SyncControls />
+            <Separator />
+            <ClaudeCodeTab />
           </TabsContent>
 
           <TabsContent
