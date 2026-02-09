@@ -6,6 +6,7 @@
  */
 
 import Module from "module";
+import type { NextConfig } from "next";
 
 const isBypassMode = process.env.BYPASS_AUTH === "true";
 
@@ -29,8 +30,13 @@ if (isBypassMode) {
     console.log("[DEV] Module patching enabled for Cloudflare bypass");
 }
 
-// Now continue with normal config
-import type { NextConfig } from "next";
+// Initialize Cloudflare for development when not in bypass mode
+// This must happen before any getCloudflareContext calls
+if (!isBypassMode) {
+    const { initOpenNextCloudflareForDev } = require("@opennextjs/cloudflare");
+    initOpenNextCloudflareForDev();
+    console.log("[DEV] Cloudflare context initialized");
+}
 
 const nextConfig: NextConfig = {
     eslint: {

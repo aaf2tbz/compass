@@ -7,6 +7,7 @@ import {
   IconDashboard,
   IconFiles,
   IconFolder,
+  IconMessageCircle,
   IconReceipt,
   IconSearch,
   IconSettings,
@@ -22,6 +23,7 @@ import { NavFiles } from "@/components/nav-files"
 import { NavProjects } from "@/components/nav-projects"
 import { useCommandMenu } from "@/components/command-menu-provider"
 import { useSettings } from "@/components/settings-provider"
+import { useFeedback } from "@/components/feedback-widget"
 import type { SidebarUser } from "@/lib/auth"
 import {
   Sidebar,
@@ -95,6 +97,7 @@ function SidebarNav({
   const { state } = useSidebar()
   const { open: openSearch } = useCommandMenu()
   const { open: openSettings } = useSettings()
+  const { open: openFeedback } = useFeedback()
   const isExpanded = state === "expanded"
   const isFilesMode = pathname?.startsWith("/dashboard/files")
   const isProjectMode = /^\/dashboard\/projects\/[^/]+/.test(
@@ -122,6 +125,7 @@ function SidebarNav({
         ? { ...item, onClick: openSettings }
         : item
     ),
+    { title: "Feedback", icon: IconMessageCircle, onClick: openFeedback },
     { title: "Search", icon: IconSearch, onClick: openSearch },
   ]
 

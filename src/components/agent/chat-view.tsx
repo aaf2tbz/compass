@@ -865,7 +865,16 @@ export function ChatView({ variant }: ChatViewProps) {
 
   // --- PANEL variant ---
   return (
-    <div className="flex h-full w-full flex-col">
+    <div className="flex h-full w-full flex-col relative">
+      {/* Exit button - top left */}
+      <button
+        onClick={toggle}
+        className="absolute top-3 left-3 z-10 h-9 w-9 flex items-center justify-center rounded-full bg-muted/80 hover:bg-muted text-foreground transition-all duration-200 hover:scale-105 active:scale-95"
+        aria-label="Close chat"
+      >
+        <IconArrowLeft className="size-5" />
+      </button>
+
       {/* Conversation */}
       <Conversation className="flex-1">
         <ConversationContent>
@@ -912,7 +921,6 @@ export function ChatView({ variant }: ChatViewProps) {
           isGenerating={chat.isGenerating}
           onSend={handleActiveSend}
           onNewChat={chat.messages.length > 0 ? chat.newChat : undefined}
-          onToggle={toggle}
           className="w-full"
         />
       </div>

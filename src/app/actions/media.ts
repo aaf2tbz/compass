@@ -226,6 +226,7 @@ export async function getProjectPhotos(projectId: string) {
                 createdAt: projectAssets.createdAt,
                 dailyLogId: projectAssets.dailyLogId,
                 date: dailyLogs.date,
+                driveFileId: projectAssets.driveFileId,
             })
             .from(projectAssets)
             .leftJoin(dailyLogs, eq(projectAssets.dailyLogId, dailyLogs.id))

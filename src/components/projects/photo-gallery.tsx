@@ -1,6 +1,45 @@
 import * as React from "react"
-import { format, parseISO, isSameDay, subDays, addDays, eachDayOfInterval, min } from "date-fns"
-import { Loader2Icon, TrashIcon, DownloadIcon, XIcon, MoreVerticalIcon, UploadIcon, PencilIcon, CheckIcon } from "lucide-react"
+
+const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+const DAYS_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+
+// Helper to create a local Date from "yyyy-MM-dd" string
+// This avoids timezone issues that occur with parseISO (which uses UTC)
+function localDateFromString(dateStr: string): Date {
+    const [year, month, day] = dateStr.split('-').map(Number)
+    return new Date(year, month - 1, day)
+}
+
+// Helper to format a Date to "yyyy-MM-dd" string using local time
+function formatDateToString(date: Date): string {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+}
+
+// Format date as "Monday, Feb 9" using local time
+function formatDisplayDate(date: Date): string {
+    const dayName = DAYS_LONG[date.getDay()]
+    const monthName = MONTHS_SHORT[date.getMonth()]
+    const dayNum = date.getDate()
+    return `${dayName}, ${monthName} ${dayNum}`
+}
+
+// Format date as "Feb 9" using local time
+function formatShortDate(date: Date): string {
+    const monthName = MONTHS_SHORT[date.getMonth()]
+    const dayNum = date.getDate()
+    return `${monthName} ${dayNum}`
+}
+
+// Check if two dates are the same day (local time)
+function isSameLocalDay(a: Date, b: Date): boolean {
+    return a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate()
+}
+import { Loader2Icon, TrashIcon, DownloadIcon, XIcon, MoreVerticalIcon, UploadIcon, PencilIcon, CheckIcon, CalendarIcon, ChevronDown } from "lucide-react"
 import { getProjectPhotos, deleteAsset, updateAssetName } from "@/app/actions/media"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -26,6 +65,12 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+import { SimpleCalendar } from "@/components/ui/simple-calendar"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -38,6 +83,7 @@ interface Asset {
     createdAt: string
     dailyLogId: string | null
     date: string | null
+    driveFileId: string | null
 }
 
 const PhotoPreviewContent = ({ asset, onClose, onDelete, onDownload }: { asset: Asset, onClose: () => void, onDelete: () => void, onDownload: () => void }) => {
@@ -156,8 +202,7 @@ export function PhotoGallery({ projectId, initialDate }: PhotoGalleryProps) {
     const [selectedAsset, setSelectedAsset] = React.useState<Asset | null>(null)
     const [deleteConfirmAsset, setDeleteConfirmAsset] = React.useState<Asset | null>(null)
     const scrollRef = React.useRef<HTMLDivElement>(null)
-    const [activeDate, setActiveDate] = React.useState<string>(format(new Date(), "yyyy-MM-dd"))
-    const dateStripRef = React.useRef<HTMLDivElement>(null)
+    const [activeDate, setActiveDate] = React.useState<string>(formatDateToString(new Date()))
 
     // Fetch assets
     const fetchAssets = React.useCallback(async () => {
@@ -196,45 +241,6 @@ export function PhotoGallery({ projectId, initialDate }: PhotoGalleryProps) {
         return groups
     }, [assets])
 
-    // Generate continuous date range
-    const displayDates = React.useMemo(() => {
-        const today = new Date()
-        let start = subDays(today, 30) // Default lookback
-        const end = addDays(today, 0) // Up to today
-
-        // If we have older assets, extend start
-        const assetDates = Object.keys(groupedAssets).map(d => parseISO(d))
-        if (assetDates.length > 0) {
-            const minAsset = min(assetDates)
-            if (minAsset < start) start = minAsset
-        }
-
-        // Generate range
-        const days = eachDayOfInterval({ start, end })
-        // Return reversed (Today first) for horizontal scrolling left-to-right (newest to oldest)
-        // OR standard (Oldest to Newest).
-        // Standard calendars are Left=Past, Right=Future.
-        // But for "scrolling back in time", if we start at Today (Rightmost), we scroll Left.
-        // Let's keep Today at the END of the list (Right side), so we can scroll Left to go back.
-        return days.map(d => format(d, "yyyy-MM-dd"))
-    }, [groupedAssets])
-
-    // Initialize Scroll Position to Today
-    React.useEffect(() => {
-        if (!loading && displayDates.length > 0 && dateStripRef.current) {
-            // Scroll to end (Today)
-            // Or better, scroll to active element
-            const activeEl = document.getElementById(`date-btn-${activeDate}`)
-            if (activeEl) {
-                activeEl.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" })
-            } else {
-                // Fallback to end
-                dateStripRef.current.scrollLeft = dateStripRef.current.scrollWidth
-            }
-        }
-    }, [loading, displayDates, activeDate]) // Re-run when activeDate changes to center it? Maybe too jumping.
-    // Actually, only on initial load or external change.
-
     // External initialDate effect
     React.useEffect(() => {
         if (initialDate && !loading) {
@@ -265,14 +271,72 @@ export function PhotoGallery({ projectId, initialDate }: PhotoGalleryProps) {
         }
     }
 
-    const handleDownload = (url: string, filename?: string) => {
-        const link = document.createElement('a')
-        link.href = url
-        link.download = filename || `photo-${Date.now()}.jpg`
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
+    const handleDownload = async (asset: Asset) => {
+        try {
+            // Determine proper file extension from MIME type
+            const getExtension = (mimeType: string | undefined): string => {
+                if (!mimeType) return 'jpg'
+                const mimeToExt: Record<string, string> = {
+                    'image/jpeg': 'jpg',
+                    'image/jpg': 'jpg',
+                    'image/png': 'png',
+                    'image/gif': 'gif',
+                    'image/webp': 'webp',
+                    'image/heic': 'heic',
+                    'image/heif': 'heif',
+                    'image/svg+xml': 'svg',
+                    'image/bmp': 'bmp',
+                    'image/tiff': 'tiff',
+                }
+                return mimeToExt[mimeType.toLowerCase()] || 'jpg'
+            }
+
+            // Build proper filename with extension
+            const buildFilename = (name: string | undefined, mimeType: string | undefined): string => {
+                const extension = getExtension(mimeType)
+                let filename = name || `photo-${Date.now()}`
+                // Remove any existing extension if present
+                filename = filename.replace(/\.[^/.]+$/, '')
+                return `${filename}.${extension}`
+            }
+
+            let url = asset.url
+
+            // If Google Drive file, use the download API
+            if (asset.driveFileId && !asset.driveFileId.startsWith("mock-")) {
+                url = `/api/google/download/${asset.driveFileId}`
+            }
+
+            // Fetch the file as blob
+            const response = await fetch(url)
+            if (!response.ok) throw new Error('Download failed')
+
+            const blob = await response.blob()
+            const filename = buildFilename(asset.name, asset.type || blob.type)
+
+            // Create download link with blob
+            const blobUrl = URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = blobUrl
+            link.download = filename
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            URL.revokeObjectURL(blobUrl)
+
+            toast.success(`Downloaded ${filename}`)
+        } catch (error) {
+            console.error('Download error:', error)
+            toast.error('Failed to download image')
+        }
     }
+
+    const [calendarOpen, setCalendarOpen] = React.useState(false)
+
+    // Get all dates that have photos for calendar modifiers
+    const datesWithPhotos = React.useMemo(() => {
+        return Object.keys(groupedAssets).filter(date => groupedAssets[date]?.length > 0)
+    }, [groupedAssets])
 
     if (loading) {
         return (
@@ -284,71 +348,50 @@ export function PhotoGallery({ projectId, initialDate }: PhotoGalleryProps) {
     }
 
     const activeAssets = groupedAssets[activeDate] || []
-    const isToday = isSameDay(parseISO(activeDate), new Date())
+    const isToday = isSameLocalDay(localDateFromString(activeDate), new Date())
 
     return (
         <div className="flex flex-col h-full bg-background rounded-lg border overflow-hidden">
-            {/* Scrollable Date Strip */}
-            <div
-                ref={dateStripRef}
-                className="flex overflow-x-auto p-2 gap-2 border-b bg-muted/30 scrollbar-hide shrink-0 items-center"
-            >
-                {displayDates.map((date) => {
-                    const hasPhotos = groupedAssets[date]?.length > 0
-                    const isActive = activeDate === date
-                    const dateObj = parseISO(date)
-                    const isDayToday = isSameDay(dateObj, new Date())
-
-                    return (
-                        <button
-                            key={date}
-                            id={`date-btn-${date}`}
-                            onClick={() => setActiveDate(date)}
+            {/* Date Selector Dropdown */}
+            <div className="flex items-center justify-between p-3 border-b bg-muted/30">
+                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="outline"
                             className={cn(
-                                "flex flex-col items-center justify-center min-w-[4.5rem] p-2 rounded-md transition-all text-sm border flex-shrink-0 cursor-pointer snap-center",
-                                isActive
-                                    ? "bg-primary text-primary-foreground border-primary shadow-sm scale-105 z-10"
-                                    : "bg-background hover:bg-muted border-transparent hover:border-border text-muted-foreground",
-                                isDayToday && !isActive && "text-foreground font-semibold border-border/50 bg-background/50"
+                                "justify-start text-left font-normal gap-2",
+                                !activeDate && "text-muted-foreground"
                             )}
                         >
-                            <span className="text-[10px] uppercase tracking-wide opacity-80">
-                                {isDayToday ? "Today" : format(dateObj, "EEE")}
+                            <CalendarIcon className="h-4 w-4" />
+                            <span>
+                                {isToday
+                                    ? "Today"
+                                    : formatDisplayDate(localDateFromString(activeDate))}
                             </span>
-                            <span className="font-bold text-lg leading-none my-0.5">
-                                {format(dateObj, "d")}
-                            </span>
-                            <span className="h-1.5 w-1.5 rounded-full overflow-hidden">
-                                {hasPhotos && (
-                                    <span className={cn(
-                                        "block w-full h-full rounded-full",
-                                        isActive ? "bg-primary-foreground" : "bg-primary"
-                                    )} />
-                                )}
-                            </span>
-                        </button>
-                    )
-                })}
+                            <ChevronDown className="h-4 w-4 ml-auto opacity-50" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                        <SimpleCalendar
+                            selected={localDateFromString(activeDate)}
+                            onSelect={(date) => {
+                                setActiveDate(formatDateToString(date))
+                                setCalendarOpen(false)
+                            }}
+                            highlightedDates={datesWithPhotos.map(d => localDateFromString(d))}
+                        />
+                    </PopoverContent>
+                </Popover>
+
+                <span className="text-xs font-medium bg-muted px-2 py-1 rounded-md text-muted-foreground">
+                    {activeAssets.length} Photos
+                </span>
             </div>
 
             {/* Main Content Area - Filtered by Active Date */}
             <ScrollArea className="flex-1" ref={scrollRef}>
-                <div className="space-y-6 p-4 pb-12 min-h-[300px]">
-                    <div className="flex items-center justify-between border-b pb-4">
-                        <div>
-                            <h3 className="font-semibold text-xl">
-                                {isToday ? "Today" : format(parseISO(activeDate), "EEEE")}
-                            </h3>
-                            <p className="text-muted-foreground text-sm">
-                                {format(parseISO(activeDate), "MMMM d, yyyy")}
-                            </p>
-                        </div>
-                        <div className="text-right">
-                            <span className="text-xs font-medium bg-muted px-2 py-1 rounded-md text-muted-foreground">
-                                {activeAssets.length} Photos
-                            </span>
-                        </div>
-                    </div>
+                <div className="p-4 pb-12 min-h-[300px]">
 
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {/* Always show upload card */}
@@ -367,7 +410,7 @@ export function PhotoGallery({ projectId, initialDate }: PhotoGalleryProps) {
                             </h4>
                             <p className="text-[10px] max-w-[120px] text-center mt-0.5 line-clamp-2">
                                 {activeAssets.length === 0
-                                    ? `Click to add photos for ${format(parseISO(activeDate), "MMM d")}`
+                                    ? `Click to add photos for ${formatShortDate(localDateFromString(activeDate))}`
                                     : "Upload more"}
                             </p>
                         </div>
@@ -402,7 +445,7 @@ export function PhotoGallery({ projectId, initialDate }: PhotoGalleryProps) {
                             asset={selectedAsset}
                             onClose={() => setSelectedAsset(null)}
                             onDelete={() => handleDelete(selectedAsset)}
-                            onDownload={() => handleDownload(selectedAsset.url, selectedAsset.name)}
+                            onDownload={() => handleDownload(selectedAsset)}
                         />
                     )}
                 </DialogContent>

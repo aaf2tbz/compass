@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { usePathname } from "next/navigation"
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { useIsMobile } from "@/hooks/use-mobile"
 import {
   useChatPanel,
   useChatState,
@@ -18,6 +18,7 @@ export function ChatPanelShell() {
   const { spec: renderSpec, isRendering } =
     useRenderState()
   const pathname = usePathname()
+  const isMobile = useIsMobile()
   const hasRenderedUI = !!renderSpec?.root || isRendering
   // dashboard acts as "page" variant only when NOT rendering
   const isDashboard =
@@ -132,16 +133,17 @@ export function ChatPanelShell() {
     return () => cleanup?.()
   }, [])
 
-  // container width/style for panel mode
-  const panelStyle =
-    !isDashboard && isOpen
-      ? { width: panelWidth }
-      : undefined
+  // keyboard style
+  const keyboardStyle = keyboardHeight > 0
+    ? { paddingBottom: keyboardHeight }
+    : {}
 
-  const keyboardStyle =
-    keyboardHeight > 0
-      ? { paddingBottom: keyboardHeight }
-      : undefined
+  // container width/style for panel mode - only apply on desktop
+  const computedStyle = {
+    ...keyboardStyle,
+    // Only apply panel width on desktop (not mobile)
+    ...((!isDashboard && isOpen && !isMobile) ? { width: panelWidth } : {}),
+  }
 
   // Compass rotation animation
   const [compassRotation, setCompassRotation] = useState(0)
@@ -185,7 +187,7 @@ export function ChatPanelShell() {
                 : "translate-x-full md:translate-x-0 md:w-0 md:border-transparent md:shadow-none md:opacity-0 pointer-events-none",
             ]
         )}
-        style={{ ...panelStyle, ...keyboardStyle }}
+        style={computedStyle}
       >
         {/* Mobile header */}
         {!isDashboard && (

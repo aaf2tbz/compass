@@ -174,8 +174,16 @@ export function SiteHeader({
 
       {/* desktop header: three-column grid for true center search */}
       <div className="hidden h-12 w-full grid-cols-[1fr_minmax(0,28rem)_1fr] items-center px-4 md:grid">
-        <div className="flex items-center">
+        <div className="flex items-center gap-1">
           <SidebarTrigger className="-ml-1" />
+          <button
+            onClick={openFeedback}
+            className="flex h-8 items-center gap-1.5 rounded-full bg-primary px-3 text-primary-foreground text-xs font-medium shadow-sm hover:bg-primary/90 active:scale-95 transition-all"
+            aria-label="Send feedback"
+          >
+            <IconMessageCircle className="size-3.5" />
+            Feedback
+          </button>
         </div>
 
         <div className="relative justify-self-center w-full">
@@ -210,14 +218,6 @@ export function SiteHeader({
 
         <div className="flex shrink-0 items-center justify-end gap-0.5">
           <NotificationsPopover />
-          <button
-            onClick={openFeedback}
-            className="flex h-8 items-center gap-1.5 rounded-full bg-primary px-3 text-primary-foreground text-xs font-medium shadow-sm hover:bg-primary/90 active:scale-95 transition-all mx-1"
-            aria-label="Send feedback"
-          >
-            <IconMessageCircle className="size-3.5" />
-            Feedback
-          </button>
           <ThemeToggle />
           <UserDropdown
             user={user}
